@@ -1,9 +1,39 @@
+"use client";
+
 import Image from "next/image";
+import {useContext} from "react";
+import {AuthProviderContext} from "@/app/components/AuthProvider";
 
 export default function Home() {
+
+  // const {users, setUsers} = useState([]);
+
+  // prisma.user.findMany()
+  //   .then(users => setUsers(users))
+  //   .catch(error => setUsers(error));
+
+  let {user, setUser} = useContext(AuthProviderContext);
+
+  const logout = ()=> {
+    localStorage.removeItem('user');
+    setUser(null);
+  }
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
+    <div
+      className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
       <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
+
+        {user &&
+          <div>
+            <div>Logged in: {user.name}</div>
+            <button onClick={logout}>Logout</button>
+          </div>
+        }
+
+        <div>
+          {JSON.stringify(user)}
+        </div>
         <Image
           className="dark:invert"
           src="https://nextjs.org/icons/next.svg"
@@ -12,7 +42,8 @@ export default function Home() {
           height={38}
           priority
         />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
+        <ol
+          className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
           <li className="mb-2">
             Get started by editing{" "}
             <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
