@@ -11,23 +11,28 @@ datasource db {
 }
 
 model users {
-  id         Int      @id @default(autoincrement())
-  email      String   @unique
-  name       String
-  password   String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  lists      lists[]
+  id                 Int      @id @default(autoincrement())
+  username           String   @unique
+  name               String?
+  sign_up_ip         String
+  sign_up_user_agent String
+  last_ip            String
+  last_user_agent    String
+  login_count Int    @default(0)
+  last_login_at      DateTime?
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+  lists              lists[]
 }
 
 model lists {
-  id         Int      @id @default(autoincrement())
+  id         Int       @id @default(autoincrement())
   name       String
   user       users     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId     Int
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  signs      signs[] @relation("ListSign")  // Many-to-many relationship
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  signs      signs[]   @relation("ListSign")  // Many-to-many relationship
 }
 
 model signs {
