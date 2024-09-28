@@ -1,18 +1,19 @@
 import {neon} from "@neondatabase/serverless";
 import {cookies} from "next/headers";
+import getListObject from "@/utils/getListObject";
 
 const sql = neon(process.env.DATABASE_URL);
 
-const validateCreateListRequest = async (username, listName) => {
+const validateCreateListRequest = async (userId, listName) => {
 
   // Check the user exists
   const user = await sql`
       SELECT id
       FROM users
-      WHERE username = ${username};
+      WHERE id = ${userId};
   `;
 
-  if (!user) {
+  if (!user.length) {
     return ['User not found'];
   }
 
@@ -20,35 +21,25 @@ const validateCreateListRequest = async (username, listName) => {
   const list = await sql`
       SELECT id
       FROM lists
-      WHERE userId = ${user.id}
+      WHERE user_id = ${user.id}
         AND name = ${listName};
   `;
 
-  if (list) {
+  if (list.length) {
     return ['List name already taken'];
   }
 
   return null;
 }
 
-const getUserIdFromUsername = async (username) => {
-  const user = await sql`
-      SELECT id
-      FROM users
-      WHERE username = ${username};
-  `;
-
-  return user.id;
-}
-
 export async function POST(request) {
 
   // Get post data
   const {listName} = await request.json();
-  const username = cookies().get('username')
+  const userId = cookies().get('user_id')?.value
 
   // Validation
-  const validationErrors = await validateCreateListRequest(username, listName);
+  const validationErrors = await validateCreateListRequest(userId, listName);
   if (validationErrors) {
     return Response.json({
       success: false,
@@ -56,17 +47,17 @@ export async function POST(request) {
     })
   }
 
-  const userId = await getUserIdFromUsername(username);
-
   // Create the new list
   const list = await sql`
-      INSERT INTO lists (name, userId, updated_at)
-      VALUES (${listName}, ${userId}, NOW()) RETURNING name, updated_at;
+      INSERT INTO lists (id, name, user_id, updated_at)
+      VALUES (uuid_generate_v4(), ${listName}, ${userId}, NOW()) RETURNING id;
   `;
+
+  const listObject = await getListObject(list[0].id);
 
   return Response.json({
     success: true,
-    'list': list[0]
+    list: listObject
   })
 
 }

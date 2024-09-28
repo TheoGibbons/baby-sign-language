@@ -13,8 +13,8 @@ export async function POST(request) {
 
   // Insert or update the user in the database and return the user
   const user = await sql`
-      INSERT INTO users (username, sign_up_ip, sign_up_user_agent, last_ip, last_user_agent, last_login_at, updated_at)
-      VALUES (${username}, ${ip}, ${user_agent}, ${ip}, ${user_agent}, NOW(), NOW()) 
+      INSERT INTO users (id, username, sign_up_ip, sign_up_user_agent, last_ip, last_user_agent, last_login_at, updated_at)
+      VALUES (uuid_generate_v4(), ${username}, ${ip}, ${user_agent}, ${ip}, ${user_agent}, NOW(), NOW()) 
       ON CONFLICT (username) 
       DO UPDATE SET
           last_ip = EXCLUDED.last_ip,
@@ -22,7 +22,7 @@ export async function POST(request) {
           last_login_at = NOW(),
           updated_at = NOW(),
           login_count = users.login_count + 1
-      RETURNING username, login_count;
+      RETURNING id, username, login_count;
   `;
 
   return Response.json({
@@ -30,7 +30,7 @@ export async function POST(request) {
     'user': user[0]
   }, {
     headers: {
-      'Set-Cookie': `username=${user[0].username}; Path=/; HttpOnly; SameSite=Strict; Secure`
+      'Set-Cookie': `user_id=${user[0].id}; Path=/; HttpOnly; SameSite=Strict; Secure`
     }
   });
 

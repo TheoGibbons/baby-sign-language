@@ -11,14 +11,14 @@ datasource db {
 }
 
 model users {
-  id                 Int      @id @default(autoincrement())
+  id                 String   @id @default(uuid())
   username           String   @unique
   name               String?
   sign_up_ip         String
   sign_up_user_agent String
   last_ip            String
   last_user_agent    String
-  login_count Int    @default(0)
+  login_count        Int      @default(0)
   last_login_at      DateTime?
   created_at         DateTime @default(now())
   updated_at         DateTime @updatedAt
@@ -26,17 +26,17 @@ model users {
 }
 
 model lists {
-  id         Int       @id @default(autoincrement())
+  id         String    @id @default(uuid())
   name       String
-  user       users     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId     Int
+  user       users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id     String
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt
   signs      signs[]   @relation("ListSign")  // Many-to-many relationship
 }
 
 model signs {
-  id                 Int      @id @default(autoincrement())
+  id                 String   @id @default(uuid())
   slug               String   @unique
   name               String
   url                String

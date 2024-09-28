@@ -3,8 +3,11 @@
 import {useContext, useEffect, useState} from "react";
 import Image from 'next/image'
 import {AuthProviderContext} from "@/app/components/AuthProvider";
+import Link from "next/link";
 
 const easyCompare = (str1, str2) => str1.toLowerCase().trim() === str2.toLowerCase().trim();
+
+const listContainsSign = (list, sign) => !!list.signs.find(s => s.id === sign.id)
 
 const searchForSign = (searchString, signs) => {
 
@@ -27,6 +30,23 @@ const searchForSign = (searchString, signs) => {
   }
 
   return null;
+}
+
+function refreshLists(setLists) {
+  fetch(`/api/lists`, {
+    method: 'GET'
+  })
+    .then(r => r.json())
+    .catch(() => alert("Website inaccessible."))
+    .then(r => {
+
+      if (r.success) {
+        setLists(r.lists);
+      } else {
+        alert('Failed to get lists');
+      }
+
+    })
 }
 
 export default function HomeClient({signs, signSlug}) {
@@ -84,7 +104,7 @@ export default function HomeClient({signs, signSlug}) {
       },
     })
       .then(r => r.json())
-      .catch(e => alert("Website inaccessible."))
+      .catch(() => alert("Website inaccessible."))
       .then(r => {
         if (r.success) {
           const user = r.user;
@@ -109,7 +129,7 @@ export default function HomeClient({signs, signSlug}) {
       },
     })
       .then(r => r.json())
-      .catch(e => alert("Website inaccessible."))
+      .catch(() => alert("Website inaccessible."))
       .then(r => {
 
         if (r.success) {
@@ -119,6 +139,64 @@ export default function HomeClient({signs, signSlug}) {
         }
 
       })
+  }
+
+  useEffect(() => {
+    if (user) {
+      refreshLists(setLists);
+    }
+  }, [user]);
+
+  const deleteList = (list) => {
+
+    if (confirm(`Are you sure you want to delete your "${list.name}" list?`)) {
+
+      setLists((prevItems) => prevItems.filter(item => item.id !== list.id));
+
+      fetch(`/api/lists/${list.id}`, {
+        method: 'DELETE'
+      })
+        .then(r => r.json())
+        .catch(() => alert("Website inaccessible."))
+        .then(r => {
+          if (!r.success) {
+            refreshLists(setLists)
+            alert('Failed to delete list');
+          }
+        })
+    }
+
+  }
+
+  const toggleSignInList = (listId, signId, addOrRemove) => {
+
+    // Update the list locally
+    setLists((prevItems) => prevItems.map(list => {
+      if (list.id === listId) {
+
+        if (addOrRemove) {
+          list.signs.push({id: signId});
+        } else {
+          list.signs = list.signs.filter(sign => sign.id !== signId);
+        }
+
+      }
+      return list;
+    }));
+
+    // Update the list on the server
+    fetch(`/api/lists/${listId}/signs/${signId}`, {
+      method: addOrRemove ? 'POST' : 'DELETE'
+    })
+      .then(r => r.json())
+      .catch(() => alert("Website inaccessible."))
+      .then(r => {
+        if (!r.success) {
+          refreshLists(setLists)
+          alert('Failed to update list.');
+        }
+      })
+
   }
 
   return (
@@ -135,34 +213,41 @@ export default function HomeClient({signs, signSlug}) {
         </>
       }
 
-      <div>
-        <button>+</button>
-        {user ?
-          <div>
+      <div className="pl-[500px]">
+        <span className="relative group border">
+          <button>+</button>
+          {user ?
+            <div className="absolute top-full right-0 hidden group-hover:block border">
 
-            {lists.map(list => (
+              {lists.map(list => (
+                <div key={list.id}>
+                  <Link href={`/lists/${encodeURIComponent(list.id)}`}>{list.name}</Link>
+                  {listContainsSign(list, sign) ?
+                    <button onClick={() => toggleSignInList(list.id, sign.id, false)}>-</button> :
+                    <button onClick={() => toggleSignInList(list.id, sign.id, true)}>+</button>
+                  }
+                  <button onClick={() => deleteList(list)}>delete list</button>
+                </div>
+              ))}
+
               <div>
-                {list.name}
-                {listContainsSign(list, sign) ? <button>-</button> : <button>+</button>}
+                <form onSubmit={createNewList}>
+                  <label htmlFor="new-list">New List:</label>
+                  <input placeholder="New List" id="new-list" required/>
+                  <button>save</button>
+                </form>
               </div>
-            ))}
 
+            </div> :
             <div>
-              <form onSubmit={createNewList}>
-                <input placeholder="New List" required/>
-                <button>save</button>
+              <form onSubmit={attemptToLogUserIn}>
+                <label htmlFor="username">Login:</label>
+                <input type="text" id="username" placeholder="Username" required/>
+                <input type="submit" value="Login"/>
               </form>
             </div>
-
-          </div> :
-          <div>
-            <form onSubmit={attemptToLogUserIn}>
-              <label htmlFor="username">Login:</label>
-              <input type="text" id="username" placeholder="Username" required/>
-              <input type="submit" value="Login"/>
-            </form>
-          </div>
-        }
+          }
+        </span>
       </div>
 
       {sign &&
@@ -176,7 +261,7 @@ export default function HomeClient({signs, signSlug}) {
           </div>
           <div>
             {sign.image_url ?
-              <Image src={sign.image_url} alt={sign?.name} width={500}></Image> :
+              <Image src={sign.image_url} alt={sign?.name} width={500} height={500}></Image> :
               "No image available"
             }
           </div>
