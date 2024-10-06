@@ -1,135 +1,140 @@
-import {cookies} from "next/headers";
-import {neon} from "@neondatabase/serverless";
+import { PrismaClient } from "@prisma/client";
+import { cookies } from "next/headers";
 import getListObject from "@/utils/getListObject";
 
-const sql = neon(process.env.DATABASE_URL);
+// Initialize Prisma client
+const prisma = new PrismaClient();
 
+// Validation for PATCH request
 const validationPatch = async (userId, listId, name) => {
-
   if (!name) {
     return ['List name is required'];
   }
-
   return validation(userId, listId);
-}
+};
 
+// Common validation function
 const validation = async (userId, listId) => {
+  if (!userId) {
+    return ['User ID is missing'];
+  }
 
-  // Check the user exists
-  const user = await sql`
-      SELECT id
-      FROM users
-      WHERE id = ${userId};
-  `;
+  // Check if the user exists
+  const user = await prisma.users.findUnique({
+    where: { id: userId },
+    select: { id: true },
+  });
 
-  if (!user.length) {
+  if (!user) {
     return ['User not found'];
   }
 
-  // Check the list exists
-  const list = await sql`
-      SELECT id
-      FROM lists
-      WHERE id = ${listId};
-  `;
+  // Check if the list exists and belongs to the user
+  const list = await prisma.lists.findFirst({
+    where: {
+      id: listId,
+      user_id: userId,
+    },
+    select: { id: true },
+  });
 
-  if (!list.length) {
-    return ['List not found'];
-  }
-
-  // Check the list belongs to the user
-  const listUser = await sql`
-      SELECT id
-      FROM lists
-      WHERE id = ${listId}
-        AND user_id = ${userId};
-  `;
-
-  if (!listUser.length) {
-    return ['List not found'];
+  if (!list) {
+    return ['List not found or does not belong to the user'];
   }
 
   return null;
-}
+};
 
-export async function DELETE(request, {params}) {
-
-  const userId = cookies().get('user_id')?.value
-  const {list_id: listId} = params;
+// DELETE Request: Delete a list
+export async function DELETE(request, { params }) {
+  const userId = cookies().get('user_id')?.value;
+  const { list_id: listId } = params;
 
   // Validation
   const validationErrors = await validation(userId, listId);
   if (validationErrors) {
-    return Response.json({
-      success: false,
-      errors: validationErrors
-    })
+    return new Response(
+      JSON.stringify({
+        success: false,
+        errors: validationErrors,
+      }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
   }
 
   // Delete the list
-  await sql`
-      DELETE
-      FROM lists
-      WHERE id = ${listId};
-  `;
+  await prisma.lists.delete({
+    where: { id: listId },
+  });
 
-  return Response.json({
-    success: true
-  })
+  return new Response(
+    JSON.stringify({ success: true }),
+    { headers: { "Content-Type": "application/json" } }
+  );
 }
 
-export async function GET(request, {params}) {
-
-  const userId = cookies().get('user_id')?.value
-  const {list_id: listId} = params;
+// GET Request: Get a list
+export async function GET(request, { params }) {
+  const userId = cookies().get('user_id')?.value;
+  const { list_id: listId } = params;
 
   // Validation
   const validationErrors = await validation(userId, listId);
   if (validationErrors) {
-    return Response.json({
-      success: false,
-      errors: validationErrors
-    })
+    return new Response(
+      JSON.stringify({
+        success: false,
+        errors: validationErrors,
+      }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
   }
 
   const listObject = await getListObject(listId);
 
-  return Response.json({
-    success: true,
-    list: listObject
-  })
-
+  return new Response(
+    JSON.stringify({
+      success: true,
+      list: listObject,
+    }),
+    { headers: { "Content-Type": "application/json" } }
+  );
 }
 
-export async function PATCH(request, {params}) {
-
-  const {name} = await request.json();
-  const userId = cookies().get('user_id')?.value
-  const {list_id: listId} = params;
+// PATCH Request: Update a list
+export async function PATCH(request, { params }) {
+  const { name } = await request.json();
+  const userId = cookies().get('user_id')?.value;
+  const { list_id: listId } = params;
 
   // Validation
   const validationErrors = await validationPatch(userId, listId, name);
   if (validationErrors) {
-    return Response.json({
-      success: false,
-      errors: validationErrors
-    })
+    return new Response(
+      JSON.stringify({
+        success: false,
+        errors: validationErrors,
+      }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
   }
 
   // Update the list
-  await sql`
-      UPDATE lists
-      SET updated_at = NOW(),
-          name       = ${name}
-      WHERE id = ${listId};
-  `;
-
+  await prisma.lists.update({
+    where: { id: listId },
+    data: {
+      name: name,
+      updated_at: new Date(),
+    },
+  });
 
   const listObject = await getListObject(listId);
 
-  return Response.json({
-    success: true,
-    list: listObject
-  })
-
+  return new Response(
+    JSON.stringify({
+      success: true,
+      list: listObject,
+    }),
+    { headers: { "Content-Type": "application/json" } }
+  );
 }

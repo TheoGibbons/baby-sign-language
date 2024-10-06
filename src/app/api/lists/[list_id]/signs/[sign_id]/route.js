@@ -1,95 +1,110 @@
-import {cookies} from "next/headers";
-import {neon} from "@neondatabase/serverless";
+import { PrismaClient } from "@prisma/client";
+import { cookies } from "next/headers";
 
-const sql = neon(process.env.DATABASE_URL);
+// Initialize Prisma client
+const prisma = new PrismaClient();
 
+// Common validation function
 const validation = async (userId, listId, signId) => {
+  if (!userId) {
+    return ['User ID is missing'];
+  }
 
-  // Check the user exists
-  const user = await sql`
-      SELECT id
-      FROM users
-      WHERE id = ${userId};
-  `;
+  // Check if the user exists
+  const user = await prisma.users.findUnique({
+    where: { id: userId },
+    select: { id: true },
+  });
 
-  if (!user.length) {
+  if (!user) {
     return ['User not found'];
   }
 
-  // Check the list exists
-  const list = await sql`
-      SELECT id
-      FROM lists
-      WHERE id = ${listId};
-  `;
+  // Check if the list exists
+  const list = await prisma.lists.findUnique({
+    where: { id: listId },
+    select: { id: true },
+  });
 
-  if (!list.length) {
+  if (!list) {
     return ['List not found'];
   }
 
-  // Check the sign exists
-  const sign = await sql`
-      SELECT id
-      FROM signs
-      WHERE id = ${signId};
-  `;
+  // Check if the sign exists
+  const sign = await prisma.signs.findUnique({
+    where: { id: signId },
+    select: { id: true },
+  });
 
-  if (!sign.length) {
+  if (!sign) {
     return ['Sign not found'];
   }
 
   return null;
+};
 
-}
-
-export async function DELETE(request, {params}) {
-
-  const userId = cookies().get('user_id')?.value
-  const {list_id: listId, sign_id: signId} = params;
+// DELETE Request: Remove a sign from a list
+export async function DELETE(request, { params }) {
+  const userId = cookies().get('user_id')?.value;
+  const { list_id: listId, sign_id: signId } = params;
 
   // Validation
   const validationErrors = await validation(userId, listId, signId);
   if (validationErrors) {
-    return Response.json({
-      success: false,
-      errors: validationErrors
-    })
+    return new Response(
+      JSON.stringify({
+        success: false,
+        errors: validationErrors,
+      }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
   }
 
   // Delete the sign from the list
-  await sql`
-      DELETE
-      FROM "_ListSign"
-      WHERE "A" = ${listId}
-        AND "B" = ${signId};
-  `;
+  await prisma.lists.update({
+    where: { id: listId },
+    data: {
+      signs: {
+        disconnect: { id: signId },
+      },
+    },
+  });
 
-  return Response.json({
-    success: true
-  })
+  return new Response(
+    JSON.stringify({ success: true }),
+    { headers: { "Content-Type": "application/json" } }
+  );
 }
 
-export async function POST(request, {params}) {
-
-  const userId = cookies().get('user_id')?.value
-  const {list_id: listId, sign_id: signId} = params;
+// POST Request: Add a sign to a list
+export async function POST(request, { params }) {
+  const userId = cookies().get('user_id')?.value;
+  const { list_id: listId, sign_id: signId } = params;
 
   // Validation
   const validationErrors = await validation(userId, listId, signId);
   if (validationErrors) {
-    return Response.json({
-      success: false,
-      errors: validationErrors
-    })
+    return new Response(
+      JSON.stringify({
+        success: false,
+        errors: validationErrors,
+      }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
   }
 
   // Add the sign to the list
-  await sql`
-      INSERT INTO "_ListSign" ("A", "B")
-      VALUES (${listId}, ${signId});
-  `;
+  await prisma.lists.update({
+    where: { id: listId },
+    data: {
+      signs: {
+        connect: { id: signId },
+      },
+    },
+  });
 
-  return Response.json({
-    success: true
-  })
+  return new Response(
+    JSON.stringify({ success: true }),
+    { headers: { "Content-Type": "application/json" } }
+  );
 }

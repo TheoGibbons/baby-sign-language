@@ -1,12 +1,14 @@
 const jsdom = require("jsdom");
-const {neon} = require("@neondatabase/serverless");
-const {JSDOM} = jsdom;
-require('dotenv').config();  // Load environment variables
+const { PrismaClient } = require("@prisma/client");
+const { JSDOM } = jsdom;
+require('dotenv').config(); // Load environment variables
 
 const SIGN_INDEX_URL = "https://babysignlanguage.com/dictionary-letter/?letter=#";
 
-const getSignUrls = async function () {
+// Initialize Prisma client
+const prisma = new PrismaClient();
 
+const getSignUrls = async function () {
   // Fetch the index page
   const response = await fetch(SIGN_INDEX_URL);
 
@@ -18,7 +20,6 @@ const getSignUrls = async function () {
   const cards = doc.querySelectorAll('.list-of-pages .single-letter-card');
 
   return Array.from(cards).map(card => {
-
     const href = card.querySelector('a').getAttribute('href');
 
     return {
@@ -26,26 +27,26 @@ const getSignUrls = async function () {
       name: card.querySelector('p').textContent.trim(),
       slug: href.replace(/\/+$/g, '').split('/').pop().trim(),
       thumbnailUrl: card.querySelector('img').getAttribute('src')
-    }
+    };
   });
-
-}
+};
 
 const populateSignData = async function () {
-  // get all signs in the database
-  const sql = neon(process.env.DATABASE_URL);
-  const signs = await sql`
-      SELECT id, url
-      FROM signs
-      WHERE description IS NULL
-      ORDER BY slug 
-      LIMIT 2
-  `;
+  // Get all signs that need to be updated
+  const signs = await prisma.signs.findMany({
+    where: { description: null },
+    orderBy: { slug: 'asc' },
+    take: 2,
+    select: {
+      id: true,
+      url: true,
+    },
+  });
 
-  // Loop through signs and update them with the new data
+  // Loop through signs and update them with new data
   for (const sign of signs) {
     try {
-      // Fetch the index page
+      // Fetch the sign page
       const response = await fetch(sign.url);
 
       if (!response.ok) {
@@ -64,72 +65,75 @@ const populateSignData = async function () {
       const youtubeLink = doc.querySelector('#signvideo2')?.getAttribute('src') || '';
 
       // Update the sign in the database
-      await sql`
-          UPDATE signs
-          SET name=${name},
-              description=${description},
-              image_url=${imageUrl},
-              youtube_url=${youtubeLink},
-              updated_at=NOW()
-          WHERE id = ${sign.id}
-      `;
+      await prisma.signs.update({
+        where: { id: sign.id },
+        data: {
+          name,
+          description,
+          image_url: imageUrl,
+          youtube_url: youtubeLink,
+          updated_at: new Date(),
+        },
+      });
     } catch (error) {
       console.error(`Error processing sign with ID ${sign.id}: `, error);
     }
   }
 };
 
-// const truncateSignsFromDatabase = async function () {
-//   const sql = neon(process.env.DATABASE_URL);
-//   await sql`TRUNCATE TABLE signs CASCADE`;
-// }
-
+// Add or update signs in the database
 const addToDatabase = async function (signUrls) {
+  return Promise.all(
+    signUrls.map(async (sign) => {
+      // Check if the sign exists
+      const existingSign = await prisma.signs.findUnique({
+        where: { slug: sign.slug },
+      });
 
-  const sql = neon(process.env.DATABASE_URL);
-
-  return Promise.all(signUrls.map(async (sign) => {
-
-    const rows = await sql`
-        SELECT slug
-        FROM signs
-        WHERE slug = ${sign.slug}
-    `;
-
-    if (rows.length > 0) {
-      sql`
-          UPDATE signs
-          SET name=${sign.name},
-              url=${sign.url},
-              thumbnail_url=${sign.thumbnailUrl},
-              updated_at=NOW()
-          WHERE slug = ${sign}
-      `
-    } else {
-      sql`
-          INSERT INTO signs (name, slug, url, thumbnail_url, updated_at)
-          VALUES (${sign.name}, ${sign.slug}, ${sign.url}, ${sign.thumbnailUrl}, NOW())
-      `
-    }
-  }));
-
-}
+      if (existingSign) {
+        // Update existing sign
+        await prisma.signs.update({
+          where: { slug: sign.slug },
+          data: {
+            name: sign.name,
+            url: sign.url,
+            thumbnail_url: sign.thumbnailUrl,
+            updated_at: new Date(),
+          },
+        });
+      } else {
+        // Insert new sign
+        await prisma.signs.create({
+          data: {
+            name: sign.name,
+            slug: sign.slug,
+            url: sign.url,
+            thumbnail_url: sign.thumbnailUrl,
+            updated_at: new Date(),
+          },
+        });
+      }
+    })
+  );
+};
 
 async function main() {
-
-  // await truncateSignsFromDatabase();
-
-  // Convert HTML to array of signs
+  // Fetch and process sign URLs
   let signUrls = await getSignUrls();
 
   // Add these signs to the database
-  await addToDatabase(signUrls)
+  await addToDatabase(signUrls);
 
-  // populate more data for the signs
+  // Populate more data for the signs
   await populateSignData();
-
 }
 
 main()
-  .then(() => console.log("done"))
-  .catch(e => console.error(e));
+  .then(() => {
+    console.log("done");
+    prisma.$disconnect(); // Ensure Prisma disconnects when script is finished
+  })
+  .catch((e) => {
+    console.error(e);
+    prisma.$disconnect(); // Ensure Prisma disconnects on error
+  });

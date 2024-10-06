@@ -1,27 +1,31 @@
-import {neon} from "@neondatabase/serverless";
+import { PrismaClient } from "@prisma/client";
 
-const sql = neon(process.env.DATABASE_URL);
+// Initialize Prisma client
+const prisma = new PrismaClient();
 
 export default async function getListObject(listId) {
+  // Fetch the list along with its associated signs
+  const list = await prisma.lists.findUnique({
+    where: { id: listId },
+    select: {
+      id: true,
+      name: true,
+      updated_at: true,
+      signs: { // Query the related signs directly
+        select: { id: true },
+      },
+    },
+  });
 
-  // Create the new list
-  const list = await sql`
-      SELECT id, name, updated_at
-      FROM lists
-      WHERE id = ${listId};
-  `;
-
-  // now get all sings for this list
-  const listSigns = await sql`
-      SELECT s.id
-      FROM signs s
-               JOIN "_ListSign" ls ON s.id = ls."B"
-      WHERE ls."A" = ${list[0].id};
-  `;
-
-  return {
-    ...list[0],
-    signs: listSigns
+  if (!list) {
+    throw new Error('List not found');
   }
 
+  // Extract sign IDs from the signs relation
+  const signs = list.signs.map((sign) => sign.id);
+
+  return {
+    ...list,
+    signs,
+  };
 }

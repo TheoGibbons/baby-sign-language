@@ -1,63 +1,92 @@
-import {neon} from "@neondatabase/serverless";
-import {cookies} from "next/headers";
+import { PrismaClient } from "@prisma/client";
+import { cookies } from "next/headers";
 import getListObject from "@/utils/getListObject";
 
-const sql = neon(process.env.DATABASE_URL);
+// Initialize Prisma client
+const prisma = new PrismaClient();
 
+// Validation function to check if user exists and list name is unique
 const validateCreateListRequest = async (userId, listName) => {
+  if (!userId) {
+    return ['User ID is missing'];
+  }
 
-  // Check the user exists
-  const user = await sql`
-      SELECT id
-      FROM users
-      WHERE id = ${userId};
-  `;
+  // Check if the user exists
+  const user = await prisma.users.findUnique({
+    where: { id: userId },
+    select: { id: true },
+  });
 
-  if (!user.length) {
+  if (!user) {
     return ['User not found'];
   }
 
-  // Check the list name isn't taken for this user
-  const list = await sql`
-      SELECT id
-      FROM lists
-      WHERE user_id = ${user.id}
-        AND name = ${listName};
-  `;
+  // Check if the list name is already taken for this user
+  const list = await prisma.lists.findFirst({
+    where: {
+      user_id: user.id,
+      name: listName,
+    },
+    select: { id: true },
+  });
 
-  if (list.length) {
+  if (list) {
     return ['List name already taken'];
   }
 
   return null;
-}
+};
 
 export async function POST(request) {
+  try {
+    // Get the post data from the request body
+    const { listName } = await request.json();
+    const userId = cookies().get('user_id')?.value;
 
-  // Get post data
-  const {listName} = await request.json();
-  const userId = cookies().get('user_id')?.value
+    // Validation
+    const validationErrors = await validateCreateListRequest(userId, listName);
+    if (validationErrors) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          errors: validationErrors,
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
-  // Validation
-  const validationErrors = await validateCreateListRequest(userId, listName);
-  if (validationErrors) {
-    return Response.json({
-      success: false,
-      errors: validationErrors
-    })
+    // Create the new list
+    const list = await prisma.lists.create({
+      data: {
+        id: crypto.randomUUID(), // Use crypto to generate a UUID or another method
+        name: listName,
+        user_id: userId,
+        updated_at: new Date(),
+      },
+      select: { id: true },
+    });
+
+    // Get the list object for response
+    const listObject = await getListObject(list.id);
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        list: listObject,
+      }),
+      { headers: { "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error('Error creating list:', error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: 'Failed to create the list',
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  } finally {
+    // Disconnect Prisma client after operation
+    await prisma.$disconnect();
   }
-
-  // Create the new list
-  const list = await sql`
-      INSERT INTO lists (id, name, user_id, updated_at)
-      VALUES (uuid_generate_v4(), ${listName}, ${userId}, NOW()) RETURNING id;
-  `;
-
-  const listObject = await getListObject(list[0].id);
-
-  return Response.json({
-    success: true,
-    list: listObject
-  })
-
 }

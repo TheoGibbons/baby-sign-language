@@ -1,37 +1,68 @@
-import {neon} from "@neondatabase/serverless";
+import { PrismaClient } from "@prisma/client";
 
 export async function POST(request) {
+  const prisma = new PrismaClient();
 
-  // Get post data
-  const {username} = await request.json();
+  try {
+    // Get post data
+    const { username } = await request.json();
 
-  // Create the user in the database
-  const ip = request.headers.get('x-forwarded-for') || request.headers.get('remote-addr') || 'unknown';
-  const user_agent = request.headers.get('user-agent') || 'unknown';
+    // Get request headers for IP and user-agent
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('remote-addr') || 'unknown';
+    const userAgent = request.headers.get('user-agent') || 'unknown';
 
-  const sql = neon(process.env.DATABASE_URL);
+    // Upsert the user in the database (insert if not exist, otherwise update)
+    const user = await prisma.users.upsert({
+      where: { username },
+      update: {
+        last_ip: ip,
+        last_user_agent: userAgent,
+        last_login_at: new Date(),
+        updated_at: new Date(),
+        login_count: {
+          increment: 1,
+        },
+      },
+      create: {
+        id: crypto.randomUUID(), // Use crypto to generate UUID or use any UUID generation method
+        username,
+        sign_up_ip: ip,
+        sign_up_user_agent: userAgent,
+        last_ip: ip,
+        last_user_agent: userAgent,
+        last_login_at: new Date(),
+        updated_at: new Date(),
+        login_count: 1,
+      },
+      select: {
+        id: true,
+        username: true,
+        login_count: true,
+      },
+    });
 
-  // Insert or update the user in the database and return the user
-  const user = await sql`
-      INSERT INTO users (id, username, sign_up_ip, sign_up_user_agent, last_ip, last_user_agent, last_login_at, updated_at)
-      VALUES (uuid_generate_v4(), ${username}, ${ip}, ${user_agent}, ${ip}, ${user_agent}, NOW(), NOW()) 
-      ON CONFLICT (username) 
-      DO UPDATE SET
-          last_ip = EXCLUDED.last_ip,
-          last_user_agent = EXCLUDED.last_user_agent,
-          last_login_at = NOW(),
-          updated_at = NOW(),
-          login_count = users.login_count + 1
-      RETURNING id, username, login_count;
-  `;
-
-  return Response.json({
-    success: true,
-    'user': user[0]
-  }, {
-    headers: {
-      'Set-Cookie': `user_id=${user[0].id}; Path=/; HttpOnly; SameSite=Strict; Secure`
-    }
-  });
-
+    return new Response(
+      JSON.stringify({
+        success: true,
+        user,
+      }),
+      {
+        headers: {
+          'Set-Cookie': `user_id=${user.id}; Path=/; HttpOnly; SameSite=Strict; Secure`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+  } catch (error) {
+    console.error('Error in POST request:', error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: 'Failed to create or update user',
+      }),
+      { status: 500 }
+    );
+  } finally {
+    await prisma.$disconnect();
+  }
 }

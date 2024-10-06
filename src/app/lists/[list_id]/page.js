@@ -14,12 +14,12 @@ export default function List({params}) {
       method: 'GET'
     })
       .then(r => r.json())
-      .catch(() => alert("Website inaccessible."))
       .then(r => {
         if (r.success) {
           setList(r.list);
         }
       })
+      .catch(() => alert("Website inaccessible. Failed to get list."))
 
   }, [listId]);
 
@@ -36,7 +36,6 @@ export default function List({params}) {
       },
     })
       .then(r => r.json())
-      .catch(() => alert("Website inaccessible."))
       .then(r => {
 
         if (r.success) {
@@ -46,6 +45,7 @@ export default function List({params}) {
         }
 
       })
+      .catch(() => alert("Website inaccessible. Failed to rename list."))
 
   }
 
@@ -60,8 +60,8 @@ export default function List({params}) {
             </h1>
             <ul>
               {list.signs.length ?
-                list.signs.map(sign => (
-                  <li key={sign.id}>{sign.id}</li>
+                list.signs.map(signId => (
+                  <li key={signId}>{signId}</li>
                 )) :
                 <li>No signs in this list.</li>
               }

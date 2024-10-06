@@ -37,19 +37,19 @@ function refreshLists(setLists) {
     method: 'GET'
   })
     .then(r => r.json())
-    .catch(() => alert("Website inaccessible."))
     .then(r => {
 
-      if (r.success) {
+      if (r?.success) {
         setLists(r.lists);
       } else {
         alert('Failed to get lists');
       }
 
     })
+    .catch(() => alert("Website inaccessible. Failed to get lists."))
 }
 
-export default function HomeClient({signs, signSlug}) {
+export default function Body({signs, signSlug}) {
   const [sign, setSign] = useState();
   const [lists, setLists] = useState([]);
 
@@ -64,6 +64,7 @@ export default function HomeClient({signs, signSlug}) {
             return;
           }
         }
+        setSign("Sign not found");
       }
 
       // No sign slug provided or sign provided not found, so pick a random sign
@@ -104,9 +105,8 @@ export default function HomeClient({signs, signSlug}) {
       },
     })
       .then(r => r.json())
-      .catch(() => alert("Website inaccessible."))
       .then(r => {
-        if (r.success) {
+        if (r?.success) {
           const user = r.user;
           localStorage.setItem('user', JSON.stringify(user));
           setUser(user);
@@ -114,6 +114,7 @@ export default function HomeClient({signs, signSlug}) {
           alert('Login failed');
         }
       })
+      .catch(() => alert("Website inaccessible. Login failed."))
   }
 
   const createNewList = (event) => {
@@ -129,16 +130,16 @@ export default function HomeClient({signs, signSlug}) {
       },
     })
       .then(r => r.json())
-      .catch(() => alert("Website inaccessible."))
       .then(r => {
 
-        if (r.success) {
+        if (r?.success) {
           setLists((prevItems) => [...prevItems, r.list]);
         } else {
           alert('List creation failed');
         }
 
       })
+      .catch(() => alert("Website inaccessible. Failed to create list."))
   }
 
   useEffect(() => {
@@ -157,13 +158,13 @@ export default function HomeClient({signs, signSlug}) {
         method: 'DELETE'
       })
         .then(r => r.json())
-        .catch(() => alert("Website inaccessible."))
         .then(r => {
           if (!r.success) {
             refreshLists(setLists)
             alert('Failed to delete list');
           }
         })
+        .catch(() => alert("Website inaccessible. Failed to delete list."))
     }
 
   }
@@ -189,13 +190,13 @@ export default function HomeClient({signs, signSlug}) {
       method: addOrRemove ? 'POST' : 'DELETE'
     })
       .then(r => r.json())
-      .catch(() => alert("Website inaccessible."))
       .then(r => {
         if (!r.success) {
           refreshLists(setLists)
           alert('Failed to update list.');
         }
       })
+      .catch(() => alert("Website inaccessible. Failed to update list."))
 
   }
 
@@ -208,7 +209,7 @@ export default function HomeClient({signs, signSlug}) {
           <input list="signs-datalist" id="search" onChange={searchOnChange}/>
 
           <datalist id="signs-datalist">
-            {signs.map(sign => <option value={sign.name} key={sign.id}/>)}
+            {signs.map(thisSign => <option value={thisSign.name} key={thisSign.id}/>)}
           </datalist>
         </>
       }
@@ -250,23 +251,25 @@ export default function HomeClient({signs, signSlug}) {
         </span>
       </div>
 
-      {sign &&
-        <div>
+      {typeof sign === 'string' ?
+        sign :
+        (sign &&
           <div>
             <div>
-              <div>{sign.name}</div>
-              <a href={sign.url}>{sign.url}</a>
+              <div>
+                <div>{sign.name}</div>
+                <a href={sign.url}>{sign.url}</a>
+              </div>
+              <div>{sign.desciption}</div>
             </div>
-            <div>{sign.desciption}</div>
+            <div>
+              {sign.image_url ?
+                <Image src={sign.image_url} alt={sign?.name} width={500} height={500}></Image> :
+                "No image available"
+              }
+            </div>
           </div>
-          <div>
-            {sign.image_url ?
-              <Image src={sign.image_url} alt={sign?.name} width={500} height={500}></Image> :
-              "No image available"
-            }
-          </div>
-        </div>
-      }
+        )}
 
     </div>
   );
