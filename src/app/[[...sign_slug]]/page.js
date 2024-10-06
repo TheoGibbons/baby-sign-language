@@ -1,6 +1,6 @@
 import React from 'react';
 import Body from "./Body";
-import getAllSigns from "./getAllSigns";
+import getAllSigns from "../../utils/getAllSigns";
 
 // This is a server component in Next.js
 export default async function Home({params}) {
