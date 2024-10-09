@@ -39,7 +39,7 @@ const validation = async (userId, listId) => {
   });
 
   if (!list) {
-    return ['List not found or does not belong to the user'];
+    return ['List not found or belongs to another user'];
   }
 
   return null;
