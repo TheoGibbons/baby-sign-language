@@ -5,10 +5,14 @@ import SignView from "./SignView";
 import LogoLink from "@/app/components/LogoLink";
 import {BiEdit, BiSolidTrash} from "react-icons/bi";
 import {useRouter} from "next/navigation";
+import {FiEyeOff, FiFileText, FiGrid, FiImage} from "react-icons/fi";
+import views, {FULL_FULL_WIDTH, FULL_GRID, FULL_NO_IMAGE, FULL_NO_TEXT} from "@/app/lists/[list_id]/views";
 
 export default function Body({listId, signs}) {
 
   const [list, setList] = useState(null);
+  const [filter, setFilter] = useState(null);
+  const [view, setView] = useState('grid');
   const router = useRouter();
 
   useEffect(() => {
@@ -55,6 +59,10 @@ export default function Body({listId, signs}) {
 
   }
 
+  const cycleView = () => {
+    setView((prevView) => views[(views.indexOf(prevView) + 1) % views.length]);
+  }
+
   const deleteList = () => {
 
     if (confirm(`Are you sure you want to delete your "${list.name}" list?`)) {
@@ -75,6 +83,14 @@ export default function Body({listId, signs}) {
         .catch(() => alert("Website inaccessible. Failed to delete list."))
     }
 
+  }
+
+  // Convert the list.signs which is an array of id's to an array of sign objects
+  let listSigns = list?.signs.map(signId => signs.find(sign => sign.id === signId));
+
+  // Filter the listSigns based on the filter
+  if (filter) {
+    listSigns = listSigns.filter(sign => sign.name.toLowerCase().includes(filter.toLowerCase()));
   }
 
   return (
@@ -102,25 +118,44 @@ export default function Body({listId, signs}) {
                 <BiSolidTrash/>
               </button>
             </div>
+
           </div>
 
-          <ul className="space-y-4">
-            {list.signs.length ? (
-              list.signs.map((signId) => (
-                <li key={signId} className="p-4 border rounded-lg bg-gray-50">
-                  <SignView sign={signs.find((sign) => sign.id === signId)}/>
-                </li>
-              ))
+          <div className="flex justify-between mb-4 gap-8">
+            <input type="text"
+                   className="flex-grow px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   placeholder="Filter"
+                   onChange={e => setFilter(e.target.value)}
+            />
+            <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                    onClick={cycleView}
+            >
+              {view === FULL_FULL_WIDTH && <FiImage/>}
+              {view === FULL_GRID && <FiGrid/>}
+              {view === FULL_NO_IMAGE && <FiEyeOff/>}
+              {view === FULL_NO_TEXT && <FiFileText/>}
+            </button>
+          </div>
+
+          <div
+            className={
+              view === FULL_GRID
+                ? "grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4"
+                : "space-y-4"
+            }
+          >
+            {listSigns.length ? (
+              listSigns.map(sign => <SignView key={sign.id} sign={sign} view={view}/>)
             ) : (
-              <li className="text-gray-500">No signs in this list.</li>
+              <div className="text-gray-500">No signs in this list.</div>
             )}
-          </ul>
+          </div>
+
         </div>
       ) : (
         <p className="text-center text-gray-600">Loading...</p>
       )}
     </div>
   );
-
 
 }
