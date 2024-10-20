@@ -42,3 +42,8 @@ next-env.d.ts
 /.env.production
 
 /prisma/migrations/*
+
+/src/cache/*
+!/src/cache/.gitkeep
+/src/files/*
+!/src/files/.gitkeep
