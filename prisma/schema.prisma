@@ -40,12 +40,30 @@ model signs {
   slug               String   @unique
   name               String
   url                String
-  thumbnail_url      String
-  description        String?
-  image_url          String?
+  thumbnail_file_id  String   // Foreign key for thumbnail file
+  thumbnailFile      files    @relation("ThumbnailFile", fields: [thumbnail_file_id], references: [id])
+  image_file_id      String?  // Foreign key for image file
+  imageFile          files?   @relation("ImageFile", fields: [image_file_id], references: [id])
   youtube_url        String?
-  gif_url            String?
+  gif_file_id        String?
+  description        String?
   created_at         DateTime @default(now())
   updated_at         DateTime @updatedAt
-  lists              lists[] @relation("ListSign") // Many-to-many relationship
+  lists              lists[]  @relation("ListSign") // Many-to-many relationship
 }
+
+model files {
+  id                 String   @id @default(uuid())
+  url                String?
+  local_path         String
+  size               String
+  width              String
+  height             String
+  extension          String
+  mime               String
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+  thumbnailSigns     signs[]  @relation("ThumbnailFile") // Inverse relation for thumbnail
+  imageSigns         signs[]  @relation("ImageFile")     // Inverse relation for image
+}
+
