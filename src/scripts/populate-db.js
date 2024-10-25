@@ -145,7 +145,10 @@ const createOrGetFileFromUrl = async function (url) {
     data: {
       id: fileId,
       url,
-      local_path: localPathWithExt.replace(path.join(__dirname, '../../public'), ''),
+      local_path: localPathWithExt
+        .replace(path.join(__dirname, '../../public'), '')
+        .replace(/\\/g, '/')    // Replace backslashes with forward slashes for windows
+      ,
       size: size.toString(),
       width: width?.toString() || '',
       height: height?.toString() || '',
