@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import {FULL_FULL_WIDTH, FULL_NO_IMAGE, FULL_NO_TEXT} from "@/app/lists/[list_id]/views";
+import {FULL_FULL_WIDTH, FULL_NO_IMAGE, FULL_NO_TEXT, FULL_YOUTUBE, HALF_YOUTUBE,} from "@/app/lists/[list_id]/views";
+import {YouTubeEmbed} from "@/components/YouTubeEmbed";
 
 export default function SignView({sign, view}) {
   return (
@@ -10,7 +11,7 @@ export default function SignView({sign, view}) {
       <Link href={`/${sign.slug}`}>
         <div className="flex justify-center">
           {/* Render the image or alternate content based on the view */}
-          {view !== FULL_NO_IMAGE && sign?.thumbnailFile?.local_path ? (
+          {([FULL_NO_IMAGE, FULL_YOUTUBE, HALF_YOUTUBE].indexOf(view) === -1) && sign?.thumbnailFile?.local_path ? (
             (view === FULL_FULL_WIDTH && sign?.imageFile?.local_path ?
                 (
                   <Image
@@ -28,11 +29,14 @@ export default function SignView({sign, view}) {
                   />
                 )
             )) : (
-            view !== FULL_NO_IMAGE && "No image available"
+            ([FULL_NO_IMAGE, FULL_YOUTUBE, HALF_YOUTUBE].indexOf(view) === -1) && "No image available"
           )}
+          {[FULL_YOUTUBE, HALF_YOUTUBE].indexOf(view) !== -1 &&
+            <YouTubeEmbed url={sign?.youtube_url} title={`YouTube ${sign?.name}`}/>
+          }
         </div>
         {/* Hide text for FULL_NO_TEXT view */}
-        {view !== FULL_NO_TEXT && <h1>{sign.name}</h1>}
+        {[FULL_NO_TEXT, FULL_YOUTUBE, HALF_YOUTUBE].indexOf(view) === -1 && <h1>{sign.name}</h1>}
       </Link>
     </div>
   );

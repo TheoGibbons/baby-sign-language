@@ -35,5 +35,4 @@ export default async function getAllSigns() {
     await prisma.$disconnect();
   }
 
-
 }

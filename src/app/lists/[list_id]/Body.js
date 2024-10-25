@@ -6,13 +6,22 @@ import LogoLink from "@/app/components/LogoLink";
 import {BiEdit, BiSolidTrash} from "react-icons/bi";
 import {useRouter} from "next/navigation";
 import {FiEyeOff, FiFileText, FiGrid, FiImage} from "react-icons/fi";
-import views, {FULL_FULL_WIDTH, FULL_GRID, FULL_NO_IMAGE, FULL_NO_TEXT} from "@/app/lists/[list_id]/views";
+import views, {
+  FULL_FULL_WIDTH,
+  FULL_GRID,
+  FULL_NO_IMAGE,
+  FULL_NO_TEXT,
+  FULL_YOUTUBE,
+  HALF_YOUTUBE,
+} from "@/app/lists/[list_id]/views";
+import {FaYoutube} from "react-icons/fa6";
+import {LiaYoutubeSquare} from "react-icons/lia";
 
 export default function Body({listId, signs}) {
 
   const [list, setList] = useState(null);
   const [filter, setFilter] = useState(null);
-  const [view, setView] = useState('grid');
+  const [view, setView] = useState(localStorage.getItem('listView') || FULL_GRID);
   const router = useRouter();
 
   useEffect(() => {
@@ -32,6 +41,12 @@ export default function Body({listId, signs}) {
       .catch(() => alert("Website inaccessible. Failed to get list."))
 
   }, [listId]);
+
+  useEffect(() => {
+
+    localStorage.setItem('listView', view);
+
+  }, [view]);
 
   const renameList = () => {
 
@@ -134,14 +149,19 @@ export default function Body({listId, signs}) {
               {view === FULL_GRID && <FiGrid/>}
               {view === FULL_NO_IMAGE && <FiEyeOff/>}
               {view === FULL_NO_TEXT && <FiFileText/>}
+              {view === FULL_YOUTUBE && <FaYoutube/>}
+              {view === HALF_YOUTUBE && <LiaYoutubeSquare/>}
             </button>
           </div>
 
           <div
             className={
-              view === FULL_GRID
+              [FULL_GRID].indexOf(view) !== -1
                 ? "grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4"
-                : "space-y-4"
+                :
+                [HALF_YOUTUBE].indexOf(view) !== -1
+                  ? "grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-2"
+                  : "space-y-4"
             }
           >
             {listSigns.length ? (

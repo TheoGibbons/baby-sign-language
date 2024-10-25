@@ -9,6 +9,7 @@ import {CiLogout, CiSearch} from "react-icons/ci";
 import {AiOutlineSave} from "react-icons/ai";
 import {FiMinus} from "react-icons/fi";
 import {IoAdd} from "react-icons/io5";
+import {YouTubeEmbed} from "@/components/YouTubeEmbed";
 
 const easyCompare = (str1, str2) => str1.toLowerCase().trim() === str2.toLowerCase().trim();
 
@@ -73,11 +74,14 @@ export default function Body({signs, signSlug}) {
           }
         }
         setSign("Sign not found");
+        return;
       }
 
-      // No sign slug provided or sign provided not found, so pick a random sign
-      const randomSign = signs[Math.floor(Math.random() * signs.length)];
-      setSign(randomSign)
+      if (!sign) {
+        // No sign slug provided or sign provided not found, so pick a random sign
+        const randomSign = signs[Math.floor(Math.random() * signs.length)];
+        setSign(randomSign)
+      }
 
     }
   }, [signs, signSlug]);
@@ -376,6 +380,9 @@ export default function Body({signs, signSlug}) {
               ) : (
                 <div className="text-gray-500">No image available</div>
               )}
+            </div>
+            <div className="flex justify-center mt-10">
+              <YouTubeEmbed url={sign?.youtube_url} title={`YouTube ${sign?.name}`}/>
             </div>
           </div>
         )
