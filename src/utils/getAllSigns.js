@@ -5,8 +5,24 @@ export default async function getAllSigns() {
   const prisma = new PrismaClient();
 
   try {
+
     // Fetch all signs from the 'signs' table
-    const signs = await prisma.signs.findMany();
+    let signs = await prisma.signs.findMany({
+      include: {
+        imageFile: {
+          select: {
+            id: true,
+            local_path: true,
+          },
+        },
+        thumbnailFile: {
+          select: {
+            id: true,
+            local_path: true,
+          },
+        },
+      },
+    });
 
     if (!signs) return "No signs found";
 

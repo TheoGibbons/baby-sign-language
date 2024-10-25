@@ -25,8 +25,21 @@ const validation = async (userId) => {
 };
 
 export async function GET() {
+
   // Get the user ID from the cookies
   const userId = cookies().get('user_id')?.value;
+
+  if(!userId) {
+    // No user is logged in
+    return new Response(
+      JSON.stringify({
+        success: false,
+        lists: [],
+        userLoggedOut: true,
+      }),
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+  }
 
   // Validation
   const validationErrors = await validation(userId);

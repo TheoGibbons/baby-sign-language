@@ -45,5 +45,5 @@ next-env.d.ts
 
 /src/cache/*
 !/src/cache/.gitkeep
-/src/files/*
-!/src/files/.gitkeep
+/public/static/images/files/*
+!/public/static/images/files/.gitkeep

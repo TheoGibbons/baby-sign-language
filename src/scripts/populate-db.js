@@ -1,12 +1,13 @@
 const jsdom = require("jsdom");
 const {PrismaClient} = require("@prisma/client");
 const {JSDOM} = jsdom;
-require('dotenv').config(); // Load environment variables
+require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
-const mime = require('mime-types');
 const {v4: uuidv4} = require('uuid');
 const sharp = require('sharp');
+const {fromFile} = require('file-type')
+const {timeRemainingCalc} = require(path.join(__dirname, '../utils/timeRemainingCalc.js'));
 
 const SIGN_INDEX_URL = "https://babysignlanguage.com/dictionary-letter/?letter=#";
 let fetchCount = 0;
@@ -40,6 +41,9 @@ const urlFix = function (url) {
   url = url.replace(/march_verb_.svg/g, 'march_verb.svg');
   url = url.replace(/tear_rip_.svg/g, 'tear_rip.svg');
   url = url.replace(/text_sms_.svg/g, 'text_sms.svg');
+
+  // If the url starts with //, add http: to the beginning
+  // url = url.startsWith('//') ? `http:${url}` : url;
 
   return url;
 }
@@ -112,30 +116,44 @@ const createOrGetFileFromUrl = async function (url) {
 
   const {contents} = await getFileContents(url, false, 2000);
   const fileId = uuidv4();
-  const extension = mime.extension(mime.lookup(url));
-  const localPath = path.join(__dirname, '../files', `${fileId}.${extension}`);
+
+  const localPathNoExt = path.join(__dirname, '../../public/static/images/files', `${fileId}`);
 
   // Save the file locally
-  fs.writeFileSync(localPath, contents);
+  fs.writeFileSync(localPathNoExt, contents);
 
   // Get file metadata
-  const {size} = fs.statSync(localPath);
-  const {width, height} = await sharp(localPath).metadata();
+  const {size} = fs.statSync(localPathNoExt);
+  const {width, height} = await sharp(localPathNoExt).metadata();
+  const {ext, mime} = await fromFile(localPathNoExt);
+
+  const localPathWithExt = `${localPathNoExt}.${ext}`;
+
+  // rename the local file using the extension
+  fs.rename(localPathNoExt, localPathWithExt, err => {
+    if (err) throw err;
+  });
+
+  // if (!fileMime || !extension) {
+  //   // If URL-based MIME type detection fails, you can add fallback logic for other MIME detection methods
+  //   fileMime = 'application/octet-stream'; // Fallback to a generic type if unknown
+  //   extension = 'bin';
+  // }
 
   // Create a new row in the files table
   return await prisma.files.create({
     data: {
       id: fileId,
       url,
-      local_path: localPath,
+      local_path: localPathWithExt.replace(path.join(__dirname, '../../public'), ''),
       size: size.toString(),
-      width: width.toString(),
-      height: height.toString(),
-      extension,
-      mime: mime.lookup(url),
+      width: width?.toString() || '',
+      height: height?.toString() || '',
+      extension: ext,
+      mime: mime,
     },
   });
-}
+};
 
 const getSignUrls = async function () {
 
@@ -160,12 +178,13 @@ const getSignUrls = async function () {
   });
 };
 
-const populateSignData = async function () {
+const populateSignData = async function (batchSize = 10) {
   // Get all signs that need to be updated
   const signs = await prisma.signs.findMany({
-    where: {description: null},
-    orderBy: {slug: 'asc'},
-    // take: 100,
+    orderBy: [
+      {description: {sort: 'asc', nulls: 'first'}},
+      {description: 'asc'},
+    ],
     select: {
       id: true,
       url: true,
@@ -174,75 +193,56 @@ const populateSignData = async function () {
 
   let count = 0;
   const totalCount = signs.length;
+  let start = Date.now();
 
-  // Loop through signs and update them with new data
-  for (const sign of signs) {
-    try {
-      const times = {}
-      let start;
-      start = performance.now();
-      const {contents} = await getFileContents(sign.url, true, 2000);
-      times.getFileContents = performance.now() - start;
+  // Process in batches to avoid overwhelming the connection pool
+  for (let i = 0; i < signs.length; i += batchSize) {
+    const batch = signs.slice(i, i + batchSize); // Create a batch of records
 
-      // Convert the HTML string into a document object
-      start = performance.now();
-      const doc = new JSDOM(contents).window.document;
-      times.JSDOM = performance.now() - start;
+    // Execute the batch
+    await Promise.all(
+      batch.map(async (sign) => {
+        try {
+          const {contents} = await getFileContents(sign.url, true, 2000);
 
-      // Extract and populate data
-      start = performance.now();
-      const name = doc.querySelector('h1.title')?.textContent?.trim() || 'Unknown';
-      const description = doc.querySelector('.hero-content')?.textContent?.trim() || 'No description available';
-      const imageUrl = doc.querySelector('.hero-right picture img')?.getAttribute('src') || '';
-      const youtubeLink = doc.querySelector('#signvideo2')?.getAttribute('src') || '';
-      times.extractData = performance.now() - start;
+          // Convert the HTML string into a document object
+          const doc = new JSDOM(contents).window.document;
 
-      // Create or retrieve the thumbnail file
-      start = performance.now();
-      const thumbnailFile = await createOrGetFileFromUrl(imageUrl);
-      times.createOrGetFileFromUrl = performance.now() - start;
+          // Extract and populate data
+          const name = doc.querySelector('h1.title')?.textContent?.trim() || 'Unknown';
+          const description = doc.querySelector('.hero-content')?.textContent?.trim() || 'No description available';
+          const imageUrl = doc.querySelector('.hero-right picture img')?.getAttribute('src') || '';
+          const youtubeLink = doc.querySelector('#signvideo2')?.getAttribute('src') || '';
 
-      start = performance.now();
-      // Update the sign in the database
-      await prisma.signs.update({
-        where: {id: sign.id},
-        data: {
-          name,
-          description,
-          youtube_url: youtubeLink,
-          updated_at: new Date(),
-          imageFile: {
-            connect: {id: thumbnailFile.id}, // Connect the existing file by ID
-          },
-        },
-      });
-      times.updateSign = Math.round(performance.now() - start);
+          // Create or retrieve the thumbnail file
+          const thumbnailFile = await createOrGetFileFromUrl(imageUrl);
 
-      count++;
+          // Update the sign in the database
+          await prisma.signs.update({
+            where: {id: sign.id},
+            data: {
+              name,
+              description,
+              youtube_url: youtubeLink,
+              updated_at: new Date(),
+              imageFile: {
+                connect: {id: thumbnailFile.id}, // Connect the existing file by ID
+              },
+            },
+          });
 
-      //order times
-      const orderedTimes = Object.keys(times).sort((a, b) => times[b] - times[a]).reduce((obj, key) => {
-        obj[key] = times[key];
-        return obj;
-      }, {});
+          count++;
 
-      console.log(`Updated ${count}/${totalCount} | Network requests (total): ${fetchCount} | time remaining: ${Math.round((totalCount - count) * 2 / 60)} minutes | ${name}`, JSON.stringify(orderedTimes));
+          console.log(`Updated ${count}/${totalCount} | Network requests (total): ${fetchCount} | Remaining: ${timeRemainingCalc(Date.now(), start, count, totalCount)} | ${name}`);
 
-      // if (fetchCount > 2000) {
-      //   break;
-      // }
-
-    } catch (error) {
-      console.error(`Error processing sign with ID ${sign.id}: `, error);
-    }
+        } catch (error) {
+          console.error(`Error processing sign with ID ${sign.id}: `, error);
+        }
+      })
+    );
   }
 
   console.log(`\nDone.\n\nSuccessfully updated ${count} signs`);
-  if (count === totalCount) {
-    console.log(`All ${totalCount} signs have been updated.`);
-  } else {
-    console.log(`WARNING: NOT ALL SIGNS HAVE BEEN UPDATED. Only ${count} out of ${totalCount} signs have been updated.`);
-  }
 };
 
 // Add or update signs in the database

@@ -46,6 +46,9 @@ function refreshLists(setLists) {
 
       if (r?.success) {
         setLists(r.lists);
+      } else if (r?.userLoggedOut || (r?.errors && r.errors.includes('User not found'))) {
+        localStorage.removeItem('user');
+        window.location.reload();
       } else {
         alert('Failed to get lists');
       }
@@ -122,8 +125,8 @@ export default function Body({signs, signSlug}) {
       .catch(() => alert("Website inaccessible. Login failed."))
   }
 
-  const logout = (event) => {
-    event.preventDefault();
+  const logout = (event = null) => {
+    event?.preventDefault();
     localStorage.removeItem('user');
     setUser(null);
   }
@@ -145,6 +148,7 @@ export default function Body({signs, signSlug}) {
 
         if (r?.success) {
           setLists((prevItems) => [...prevItems, r.list]);
+          event.target.reset()
         } else {
           alert('List creation failed');
         }
@@ -361,9 +365,9 @@ export default function Body({signs, signSlug}) {
               <div className="mt-2 text-gray-600">{sign.description}</div>
             </div>
             <div className="mt-4">
-              {sign.image_url ? (
+              {sign?.imageFile?.local_path ? (
                 <Image
-                  src={sign.image_url}
+                  src={sign.imageFile.local_path}
                   alt={sign?.name}
                   width={500}
                   height={500}

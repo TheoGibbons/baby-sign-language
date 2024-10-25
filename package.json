@@ -12,8 +12,8 @@
   "dependencies": {
     "@prisma/client": "^5.21.1",
     "dotenv": "^16.4.5",
+    "file-type": "^16.5.3",
     "jsdom": "^25.0.1",
-    "mime-types": "^2.1.35",
     "next": "14.2.13",
     "pg": "^8.13.0",
     "react": "^18",
