@@ -7,7 +7,13 @@ export async function GET() {
 
   if (error) {
     console.error('Error fetching signs:', error);
-    return <div>Error loading signs...</div>;
+    return new Response(
+      JSON.stringify({
+        success: false,
+        errors: ['Failed to get signs'],
+      }),
+      {status: 500, headers: {'Content-Type': 'application/json'}}
+    );
   }
 
   return new Response(
