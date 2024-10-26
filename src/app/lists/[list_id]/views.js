@@ -5,7 +5,7 @@ export const FULL_NO_TEXT = "no-text";
 export const FULL_YOUTUBE = "full-youtube";
 export const HALF_YOUTUBE = "half-youtube";
 
-export default [
+const views = [
   FULL_FULL_WIDTH,
   FULL_GRID,
   FULL_NO_IMAGE,
@@ -13,3 +13,5 @@ export default [
   FULL_YOUTUBE,
   HALF_YOUTUBE,
 ];
+
+export default views;
