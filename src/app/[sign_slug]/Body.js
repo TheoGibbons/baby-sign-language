@@ -84,7 +84,7 @@ export default function Body({signs, signSlug}) {
       }
 
     }
-  }, [signs, signSlug]);
+  }, [signs, signSlug, sign]);
 
   useEffect(() => {
     if (sign) {

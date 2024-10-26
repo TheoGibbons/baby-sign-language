@@ -17,7 +17,7 @@ import views, {
 import {FaYoutube} from "react-icons/fa6";
 import {LiaYoutubeSquare} from "react-icons/lia";
 
-export default function Body({listId, signs}) {
+function Body({listId, signs}) {
 
   const [list, setList] = useState(null);
   const [filter, setFilter] = useState(null);
@@ -40,7 +40,7 @@ export default function Body({listId, signs}) {
       })
       .catch(() => alert("Website inaccessible. Failed to get list."))
 
-  }, [listId]);
+  }, [listId, router]);
 
   useEffect(() => {
 
@@ -179,3 +179,5 @@ export default function Body({listId, signs}) {
   );
 
 }
+
+export default Body;
