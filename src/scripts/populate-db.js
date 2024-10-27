@@ -192,6 +192,7 @@ const populateSignData = async function (batchSize = 10) {
     select: {
       id: true,
       url: true,
+      description: true,
     },
   });
 
@@ -207,6 +208,13 @@ const populateSignData = async function (batchSize = 10) {
     await Promise.all(
       batch.map(async (sign) => {
         try {
+
+          // check if this row needs refreshing
+          if (sign.description && sign.description.length > 0) {
+            console.log(`Sign doesn't need a refresh: ${sign.url}`);
+            return;
+          }
+
           const {contents} = await getFileContents(sign.url, true, 2000);
 
           // Convert the HTML string into a document object
@@ -286,12 +294,23 @@ const addToDatabase = async function (signUrls, batchSize = 10) {
 
         // Perform the update or create logic
         if (existingSign) {
-          // Update existing sign
-          await prisma.signs.update({
-            where: {slug: sign.slug},
-            data: signTableData,
-          });
-          console.log(`Updated sign: ${sign.name}`);
+
+          // Check if the sign needs updating
+          if (
+            existingSign.url === sign.url &&
+            existingSign.name === sign.name &&
+            existingSign.thumbnail_file_id === thumbnailFile.id
+          ) {
+            console.log(`Sign doesn't need updating: ${sign.name}`);
+          } else {
+            // Update existing sign
+            await prisma.signs.update({
+              where: {slug: sign.slug},
+              data: signTableData,
+            });
+            console.log(`Updated sign: ${sign.name}`);
+          }
+
         } else {
           // Insert new sign
           await prisma.signs.create({
