@@ -6,7 +6,7 @@ const path = require('path');
 const sharp = require('sharp');
 const {fromFile} = require('file-type');
 const {timeRemainingCalc} = require(path.join(__dirname, '../utils/timeRemainingCalc.js'));
-const {createHash} = require('crypto');
+const { createHash } = require('crypto');
 
 
 const SIGN_INDEX_URL = "https://babysignlanguage.com/dictionary-letter/?letter=#";
