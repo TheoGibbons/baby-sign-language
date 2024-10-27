@@ -1,13 +1,13 @@
-const jsdom = require("jsdom");
 const {PrismaClient} = require("@prisma/client");
-const {JSDOM} = jsdom;
+const {JSDOM} = require("jsdom");
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
-const {v4: uuidv4} = require('uuid');
 const sharp = require('sharp');
-const {fromFile} = require('file-type')
+const {fromFile} = require('file-type');
 const {timeRemainingCalc} = require(path.join(__dirname, '../utils/timeRemainingCalc.js'));
+const {createHash} = require('crypto');
+
 
 const SIGN_INDEX_URL = "https://babysignlanguage.com/dictionary-letter/?letter=#";
 let fetchCount = 0;
@@ -115,7 +115,8 @@ const createOrGetFileFromUrl = async function (url) {
   }
 
   const {contents} = await getFileContents(url, false, 2000);
-  const fileId = uuidv4();
+  // const fileId = uuidv4();
+  const fileId = createHash('sha1').update(url).digest('hex');
 
   const localPathNoExt = path.join(__dirname, '../../public/static/images/files', `${fileId}`);
 
@@ -328,7 +329,7 @@ async function main() {
 main()
   .then(() => {
     console.log(`Done with ${fetchCount} network requests`);
-    prisma.$disconnect(); // Ensure Prisma disconnects when script is finished
+    prisma.$disconnect(); // Ensure Prisma disconnects when the script is finished
   })
   .catch((e) => {
     console.error(e);
