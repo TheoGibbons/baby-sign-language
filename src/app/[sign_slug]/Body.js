@@ -10,6 +10,7 @@ import {AiOutlineSave} from "react-icons/ai";
 import {FiMinus} from "react-icons/fi";
 import {IoAdd} from "react-icons/io5";
 import {YouTubeEmbed} from "@/components/YouTubeEmbed";
+import {useRouter} from "next/navigation";
 
 const easyCompare = (str1, str2) => str1.toLowerCase().trim() === str2.toLowerCase().trim();
 
@@ -61,6 +62,7 @@ function refreshLists(setLists) {
 export default function Body({signs, signSlug}) {
   const [sign, setSign] = useState();
   const [lists, setLists] = useState([]);
+  const router = useRouter();
 
   useEffect(() => {
     if (signs) {
@@ -87,17 +89,25 @@ export default function Body({signs, signSlug}) {
   }, [signs, signSlug, sign]);
 
   useEffect(() => {
+    console.log(sign);    // Why does this trigger twice
     if (sign) {
 
       // Change the url to match the selected sign
-      history.replaceState({}, null, `/${sign.slug}`);
+      // history.replaceState({}, null, `/${sign.slug}`);
+      router.replace(`/${sign.slug}`, undefined, { shallow: true });
+
+      console.log('router', `${sign.slug}`);
 
     }
-  }, [sign]);
+  }, [sign, router]);
 
   const searchOnChange = (event) => {
     const mySign = searchForSign(event.target.value, signs)
+    console.log(event.target.value, mySign)
     if (mySign) {
+
+      // TODO This bug
+      // Why does this cause useEffect to be triggered twice? Once with the old value and once with the new value
       setSign(mySign);
     }
   }
