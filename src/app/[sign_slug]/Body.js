@@ -66,51 +66,31 @@ export default function Body({signs, signSlug}) {
 
   useEffect(() => {
     if (signs) {
-
       if (signSlug) {
-        // Sign slug provided so return the matching sign
-        for (const sign of signs) {
-          if (sign.slug === signSlug) {
-            setSign(sign);
-            return;
-          }
-        }
-        setSign("Sign not found");
+        const foundSign = signs.find((sign) => sign.slug === signSlug);
+        setSign(foundSign || "Sign not found");
         return;
       }
-
       if (!sign) {
-        // No sign slug provided or sign provided not found, so pick a random sign
         const randomSign = signs[Math.floor(Math.random() * signs.length)];
-        setSign(randomSign)
+        setSign(randomSign);
       }
-
     }
-  }, [signs, signSlug, sign]);
+  }, [signs, signSlug]);
 
   useEffect(() => {
-    console.log(sign);    // Why does this trigger twice
     if (sign) {
-
-      // Change the url to match the selected sign
-      // history.replaceState({}, null, `/${sign.slug}`);
-      router.replace(`/${sign.slug}`, undefined, { shallow: true });
-
-      console.log('router', `${sign.slug}`);
-
+      // router.replace(`/${sign.slug}`, undefined, {shallow: true});
+      history.replaceState({}, null, `/${sign.slug}`);
     }
   }, [sign, router]);
 
   const searchOnChange = (event) => {
-    const mySign = searchForSign(event.target.value, signs)
-    console.log(event.target.value, mySign)
-    if (mySign) {
-
-      // TODO This bug
-      // Why does this cause useEffect to be triggered twice? Once with the old value and once with the new value
+    const mySign = searchForSign(event.target.value, signs);
+    if (mySign && mySign.id !== sign?.id) {
       setSign(mySign);
     }
-  }
+  };
 
   let {user, setUser} = useContext(AuthProviderContext);
 
