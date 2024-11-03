@@ -5,7 +5,7 @@ import {addPropsToComponent} from "@/utils/AddPropsToComponent";
 
 const getCachedSigns = function getCachedSigns() {
   const currentVersionOfTheCache = localStorage.getItem('cache_version');
-  const currentCacheVersion = process.env.CACHE_VERSION;
+  const currentCacheVersion = process.env.NEXT_PUBLIC_CACHE_VERSION;
 
   if (currentVersionOfTheCache) {
     if (currentVersionOfTheCache === currentCacheVersion) {
@@ -41,7 +41,7 @@ export default function SignsProvider({component}) {
           if (r?.success) {
 
             localStorage.setItem('signs', JSON.stringify(r.signs));
-            localStorage.setItem('cache_version', process.env.CACHE_VERSION);
+            localStorage.setItem('cache_version', process.env.NEXT_PUBLIC_CACHE_VERSION);
 
             setSigns(r.signs);
           } else {
