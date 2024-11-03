@@ -47,6 +47,7 @@ model signs {
   youtube_url        String?
   gif_file_id        String?
   description        String?
+  related            Json?
   created_at         DateTime @default(now())
   updated_at         DateTime @updatedAt
   lists              lists[]  @relation("ListSign") // Many-to-many relationship

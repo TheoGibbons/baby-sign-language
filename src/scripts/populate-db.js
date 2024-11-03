@@ -6,7 +6,7 @@ const path = require('path');
 const sharp = require('sharp');
 const {fromFile} = require('file-type');
 const {timeRemainingCalc} = require(path.join(__dirname, '../utils/timeRemainingCalc.js'));
-const { createHash } = require('crypto');
+const {createHash} = require('crypto');
 
 
 const SIGN_INDEX_URL = "https://babysignlanguage.com/dictionary-letter/?letter=#";
@@ -159,6 +159,46 @@ const createOrGetFileFromUrl = async function (url) {
   });
 };
 
+const getSignId = async function (slug) {
+  const existingSign = await prisma.signs.findUnique({
+    where: {slug: slug},
+  });
+
+  if (existingSign) {
+    return existingSign.id;
+  } else {
+    return null;
+  }
+}
+
+const urlToSlug = (url) => url.replace(/\/+$/g, '').split('/').pop().trim();
+
+const getRelatedJson = async function (doc, url) {
+  const relatedSigns = doc.querySelectorAll('.related-signs-wrapper .related-card');
+  const relatedIds = [];
+  for (const related of relatedSigns) {
+    const slug = urlToSlug(related.querySelector('a').getAttribute('href'));
+    const sign = await getSignId(slug)
+
+    if (sign) {
+      relatedIds.push(await getSignId(slug));
+    } else if ([
+      'number',    // Some signs like 'number' and 'number-2' are not in the database so don't throw an error for them
+      'number-1',
+      'number-2',
+      'number-3',
+      'number-5',
+      'number-7',
+      'number-25',
+      'x-ray',
+      'neckties-2',
+    ].indexOf(slug) === -1) {
+      throw new Error(`Sign not found: ${url} | ${slug} | ${related.querySelector('a').getAttribute('href')}`);
+    }
+  }
+  return relatedIds;
+}
+
 const getSignUrls = async function () {
 
   // Fetch the index page
@@ -210,7 +250,7 @@ const populateSignData = async function (batchSize = 10) {
         try {
 
           // check if this row needs refreshing
-          if (sign.description && sign.description.length > 0) {
+          if (sign.description && sign.description.length > 0 && sign.related) {
             console.log(`Sign doesn't need a refresh: ${sign.url}`);
             return;
           }
@@ -225,6 +265,7 @@ const populateSignData = async function (batchSize = 10) {
           const description = doc.querySelector('.hero-content')?.textContent?.trim() || 'No description available';
           const imageUrl = doc.querySelector('.hero-right picture img')?.getAttribute('src') || '';
           const youtubeLink = doc.querySelector('#signvideo2')?.getAttribute('src') || '';
+          const relatedJson = await getRelatedJson(doc, sign.url);
 
           // Create or retrieve the thumbnail file
           const thumbnailFile = await createOrGetFileFromUrl(imageUrl);
@@ -235,6 +276,7 @@ const populateSignData = async function (batchSize = 10) {
             data: {
               name,
               description,
+              related: relatedJson,
               youtube_url: youtubeLink,
               updated_at: new Date(),
               imageFile: {
@@ -334,7 +376,7 @@ async function main() {
 
   // Add these signs to the database
   console.log('Adding signs to the database...');
-  await addToDatabase(signUrls);
+  // await addToDatabase(signUrls);
   console.log(`Added signs to the database\n\n`);
 
   // Populate more data for the signs
