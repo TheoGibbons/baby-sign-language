@@ -109,7 +109,7 @@ function Body({listId, signs}) {
   }
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
+    <div className="p-6 max-w-6xl mx-auto">
       {list ? (
         <div>
           <div className="flex justify-between items-center mb-4">

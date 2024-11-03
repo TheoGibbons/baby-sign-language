@@ -205,7 +205,7 @@ export default function Body({signs, signSlug}) {
   }, []);
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
+    <div className="p-6 max-w-6xl mx-auto">
       {signs && (
         <>
           <div className="flex items-center mb-4 gap-2">

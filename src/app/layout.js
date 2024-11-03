@@ -21,6 +21,12 @@ export const metadata = {
 export default function RootLayout({children}) {
   return (
     <html lang="en">
+    <head>
+      <title>Baby Sign Language</title>
+      <link rel="manifest" href="/manifest.json"/>
+      <meta name="theme-color" content="#000000"/>
+      <link rel="apple-touch-icon" href="/android-chrome-192x192.png"/>
+    </head>
     <body
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
