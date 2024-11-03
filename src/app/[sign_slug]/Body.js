@@ -380,6 +380,38 @@ export default function Body({signs, signSlug}) {
             <div className="flex justify-center mt-10">
               <YouTubeEmbed url={sign?.youtube_url} title={`YouTube ${sign?.name}`}/>
             </div>
+
+            {sign?.related && (
+              <div>
+                <h2 className="mt-10 text-2xl font-bold">Related Signs</h2>
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+                  {sign
+                    .related
+                    .map(relatedSignId => signs.find(sign => sign.id === relatedSignId))
+                    .map(relatedSign => (
+                      <div key={relatedSign.id} className="p-4 border rounded-lg bg-gray-50">
+                        <Link href={`/${relatedSign.slug}`}>
+                          <div className="flex justify-center">
+                            {relatedSign?.thumbnailFile?.local_path ? (
+                              <Image
+                                src={relatedSign.thumbnailFile.local_path}
+                                alt={relatedSign?.name}
+                                width={250}
+                                height={250}
+                              />
+                            ) : (
+                              <div className="text-gray-500">No image available</div>
+                            )}
+                          </div>
+                          <h1>{relatedSign.name}</h1>
+                        </Link>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )
+            }
+
           </div>
         )
       )}
