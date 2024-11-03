@@ -3,13 +3,26 @@
 import {useEffect, useState} from 'react';
 import {addPropsToComponent} from "@/utils/AddPropsToComponent";
 
+const getCachedSigns = function getCachedSigns() {
+  const currentVersionOfTheCache = localStorage.getItem('cache_version', JSON.stringify(r.signs));
+  const currentCacheVersion = process.env.CACHE_VERSION;
+
+  if (currentVersionOfTheCache) {
+    if (currentVersionOfTheCache === currentCacheVersion) {
+      return localStorage.getItem('signs')
+    }
+  }
+
+  return null;
+}
+
 export default function SignsProvider({component}) {
 
   const [signs, setSigns] = useState(null);
 
   useEffect(() => {
 
-    const signs = localStorage.getItem('signs')
+    const signs = getCachedSigns();
 
     if (signs) {
 
@@ -28,6 +41,7 @@ export default function SignsProvider({component}) {
           if (r?.success) {
 
             localStorage.setItem('signs', JSON.stringify(r.signs));
+            localStorage.setItem('cache_version', process.env.CACHE_VERSION);
 
             setSigns(r.signs);
           } else {
