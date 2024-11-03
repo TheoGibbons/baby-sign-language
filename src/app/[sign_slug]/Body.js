@@ -14,7 +14,7 @@ import {useRouter} from "next/navigation";
 
 const easyCompare = (str1, str2) => str1.toLowerCase().trim() === str2.toLowerCase().trim();
 
-const listContainsSign = (list, sign) => !!list.signs.find(s => s === sign.id)
+const listContainsSign = (list, sign) => !!list.signs.find(s => s === sign.id);
 
 const searchForSign = (searchString, signs) => {
 
@@ -164,9 +164,9 @@ export default function Body({signs, signSlug}) {
       if (list.id === listId) {
 
         if (addOrRemove) {
-          list.signs.push({id: signId});
+          list.signs.push(signId);
         } else {
-          list.signs = list.signs.filter(sign => sign.id !== signId);
+          list.signs = list.signs.filter(sign => sign !== signId);
         }
 
       }
