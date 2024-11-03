@@ -4,7 +4,7 @@ import {useEffect, useState} from 'react';
 import {addPropsToComponent} from "@/utils/AddPropsToComponent";
 
 const getCachedSigns = function getCachedSigns() {
-  const currentVersionOfTheCache = localStorage.getItem('cache_version', JSON.stringify(r.signs));
+  const currentVersionOfTheCache = localStorage.getItem('cache_version');
   const currentCacheVersion = process.env.CACHE_VERSION;
 
   if (currentVersionOfTheCache) {
