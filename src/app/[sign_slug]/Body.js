@@ -353,24 +353,30 @@ export default function Body({signs, signSlug}) {
 
             <div className="p-4 border rounded-lg bg-gray-50">
               <div className="text-xl font-bold">{sign.name}</div>
-              <a href={sign.url} className="text-blue-600 hover:underline">
+              <a href={sign.url} className="text-blue-600 hover:underline break-words" target="_blank">
                 {sign.url}
               </a>
-              <div className="mt-2 text-gray-600">{sign.description}</div>
             </div>
-            <div className="mt-4">
-              {sign?.imageFile?.local_path ? (
-                <Image
-                  src={sign.imageFile.local_path}
-                  alt={sign?.name}
-                  width={500}
-                  height={500}
-                  className="w-full rounded-lg shadow-lg"
-                />
-              ) : (
-                <div className="text-gray-500">No image available</div>
-              )}
+
+            <div className="rounded-lg">
+              <div className="mt-4">
+                {sign?.imageFile?.local_path ? (
+                  <Image
+                    src={sign.imageFile.local_path}
+                    alt={sign?.name}
+                    width={500}
+                    height={500}
+                    className="w-full rounded-lg shadow-lg"
+                  />
+                ) : (
+                  <div className="text-gray-500">No image available</div>
+                )}
+              </div>
+              <div className="p-4 border rounded-lg bg-gray-50">
+                <div className="mt-2 text-gray-600">{sign.description}</div>
+              </div>
             </div>
+
             <div className="flex justify-center mt-10">
               <YouTubeEmbed url={sign?.youtube_url} title={`YouTube ${sign?.name}`}/>
             </div>
