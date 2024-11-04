@@ -210,7 +210,7 @@ export default function Body({signs, signSlug}) {
         <>
           <div className="flex items-center mb-4 gap-2">
 
-            <LogoLink/>
+            <LogoLink href="/signs"/>
 
             <label htmlFor="search" className="sr-only">
               Search:

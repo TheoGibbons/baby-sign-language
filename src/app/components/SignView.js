@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import {FULL_FULL_WIDTH, FULL_NO_IMAGE, FULL_NO_TEXT, FULL_YOUTUBE, HALF_YOUTUBE,} from "@/app/lists/[list_id]/views";
+import {FULL_FULL_WIDTH, FULL_NO_IMAGE, FULL_NO_TEXT, FULL_YOUTUBE, HALF_YOUTUBE,} from "@/app/components/views";
 import {YouTubeEmbed} from "@/components/YouTubeEmbed";
 
 export default function SignView({sign, view}) {
