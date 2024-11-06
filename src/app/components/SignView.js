@@ -7,9 +7,9 @@ import {YouTubeEmbed} from "@/components/YouTubeEmbed";
 
 export default function SignView({sign, view}) {
   return (
-    <div key={sign.id} className="p-4 border rounded-lg bg-gray-50">
+    <div key={sign.id} className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-600">
       <Link href={`/${sign.slug}`}>
-        <div className="flex justify-center">
+        <div className="flex justify-center dark:bg-gray-600">
           {/* Render the image or alternate content based on the view */}
           {([FULL_NO_IMAGE, FULL_YOUTUBE, HALF_YOUTUBE].indexOf(view) === -1) && sign?.thumbnailFile?.local_path ? (
             (view === FULL_FULL_WIDTH && sign?.imageFile?.local_path ?

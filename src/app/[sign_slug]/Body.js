@@ -11,6 +11,7 @@ import {FiMinus} from "react-icons/fi";
 import {IoAdd} from "react-icons/io5";
 import {YouTubeEmbed} from "@/components/YouTubeEmbed";
 import {useRouter} from "next/navigation";
+import SignView from "@/app/components/SignView";
 
 const easyCompare = (str1, str2) => str1.toLowerCase().trim() === str2.toLowerCase().trim();
 
@@ -220,7 +221,7 @@ export default function Body({signs, signSlug}) {
                 list="signs-datalist"
                 id="search"
                 onChange={searchOnChange}
-                className="flex-grow px-4 py-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-grow px-4 py-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-900"
                 placeholder="Search signs..."
               />
               <button
@@ -257,16 +258,16 @@ export default function Body({signs, signSlug}) {
                 user ? (
                   <>
                     <div
-                      className="absolute top-full right-0 w-80 mt-2 p-4 bg-white border rounded-lg shadow-lg">
-                      <div className="mb-4 text-gray-700">
+                      className="absolute top-full right-0 w-80 mt-2 p-4 bg-white dark:bg-gray-900 border rounded-lg shadow-lg">
+                      <div className="mb-4 text-gray-700 dark:text-white">
                         Add <strong>{sign?.name}</strong> to one of your lists.
                       </div>
                       {lists.map((list) => (
                         <div key={list.id}
-                             className="flex justify-between mb-2 bg-gray-50 border rounded items-stretch">
+                             className="flex justify-between mb-2 bg-gray-50 dark:bg-gray-900 border rounded items-stretch">
 
                           <Link href={`/lists/${encodeURIComponent(list.id)}`}
-                                className="text-blue-600 hover:underline m-2">
+                                className="text-blue-600 hover:underline m-2 dark:text-custom-blue-text">
                             {list.name}
                           </Link>
 
@@ -299,7 +300,7 @@ export default function Body({signs, signSlug}) {
                             placeholder="New List"
                             id="new-list"
                             required
-                            className="w-full px-2 py-1 border rounded-l-lg focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-2 py-1 border rounded-l-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800"
                           />
                           <button
                             type="submit"
@@ -325,7 +326,7 @@ export default function Body({signs, signSlug}) {
                     </div>
                   </>
                 ) : (
-                  <div className="absolute top-full right-0 w-64 mt-2 p-4 bg-white border rounded-lg shadow-lg">
+                  <div className="absolute top-full right-0 w-64 mt-2 p-4 bg-white dark:bg-gray-900 border rounded-lg shadow-lg">
                     <form onSubmit={attemptToLogUserIn} className="space-y-2">
                       <div>
                         <label htmlFor="username" className="block text-sm font-medium">
@@ -336,7 +337,7 @@ export default function Body({signs, signSlug}) {
                           id="username"
                           placeholder="Username"
                           required
-                          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800"
                         />
                       </div>
                       <input
@@ -351,15 +352,15 @@ export default function Body({signs, signSlug}) {
             </span>
             </div>
 
-            <div className="p-4 border rounded-lg bg-gray-50">
-              <div className="text-xl font-bold">{sign.name}</div>
-              <a href={sign.url} className="text-blue-600 hover:underline break-words" target="_blank">
+            <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-900">
+              <div className="text-xl font-bold dark:text-white">{sign.name}</div>
+              <a href={sign.url} className="text-blue-600 dark:text-custom-blue-text hover:underline break-words" target="_blank">
                 {sign.url}
               </a>
             </div>
 
             <div className="rounded-lg">
-              <div className="mt-4">
+              <div className="my-4 dark:bg-gray-600 rounded-lg">
                 {sign?.imageFile?.local_path ? (
                   <Image
                     src={sign.imageFile.local_path}
@@ -372,8 +373,8 @@ export default function Body({signs, signSlug}) {
                   <div className="text-gray-500">No image available</div>
                 )}
               </div>
-              <div className="p-4 border rounded-lg bg-gray-50">
-                <div className="mt-2 text-gray-600">{sign.description}</div>
+              <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-900">
+                <div className="text-gray-600 dark:text-gray-200">{sign.description}</div>
               </div>
             </div>
 
@@ -389,28 +390,11 @@ export default function Body({signs, signSlug}) {
                     .related
                     .map(relatedSignId => signs.find(sign => sign.id === relatedSignId))
                     .map(relatedSign => (
-                      <div key={relatedSign.id} className="p-4 border rounded-lg bg-gray-50">
-                        <Link href={`/${relatedSign.slug}`}>
-                          <div className="flex justify-center">
-                            {relatedSign?.thumbnailFile?.local_path ? (
-                              <Image
-                                src={relatedSign.thumbnailFile.local_path}
-                                alt={relatedSign?.name}
-                                width={250}
-                                height={250}
-                              />
-                            ) : (
-                              <div className="text-gray-500">No image available</div>
-                            )}
-                          </div>
-                          <h1>{relatedSign.name}</h1>
-                        </Link>
-                      </div>
+                      <SignView sign={relatedSign}/>
                     ))}
                 </div>
               </div>
-            )
-            }
+            )}
 
           </div>
         )
