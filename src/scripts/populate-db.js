@@ -192,6 +192,7 @@ const getRelatedJson = async function (doc, url) {
       'number-25',
       'x-ray',
       'neckties-2',
+      'necktie-2',
     ].indexOf(slug) === -1) {
       throw new Error(`Sign not found: ${url} | ${slug} | ${related.querySelector('a').getAttribute('href')}`);
     }
