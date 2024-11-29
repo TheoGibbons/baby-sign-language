@@ -390,7 +390,7 @@ export default function Body({signs, signSlug}) {
                     .related
                     .map(relatedSignId => signs.find(sign => sign.id === relatedSignId))
                     .map(relatedSign => (
-                      <SignView sign={relatedSign}/>
+                      <SignView sign={relatedSign} key={relatedSign.id}/>
                     ))}
                 </div>
               </div>

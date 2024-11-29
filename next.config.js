@@ -5,6 +5,11 @@ const withPWA = require('next-pwa')({
 
 module.exports = withPWA({
   images: {
-    domains: ['res.cloudinary.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
+    ],
   },
 });
