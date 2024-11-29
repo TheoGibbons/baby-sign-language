@@ -75,7 +75,7 @@ function SignGrid({showSigns}) {
         }
       >
         {showSigns.length > 30 && [FULL_YOUTUBE, HALF_YOUTUBE].indexOf(view) !== -1 ?
-          <div className="text-gray-500">Too many signs to view Youtube's</div> : (
+          <div className="text-gray-500">Too many signs to view Youtube&apos;s</div> : (
             showSigns.length ? (
               showSigns.map(sign => <SignView key={sign.id} sign={sign} view={view}/>)
             ) : (
