@@ -77,7 +77,7 @@ export default function Body({signs, signSlug}) {
         setSign(randomSign);
       }
     }
-  }, [signs, signSlug]);
+  }, [sign, signs, signSlug]);
 
   useEffect(() => {
     if (sign) {
