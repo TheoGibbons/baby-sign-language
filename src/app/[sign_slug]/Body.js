@@ -40,7 +40,9 @@ const searchForSign = (searchString, signs) => {
   return null;
 }
 
-function refreshLists(setLists) {
+function refreshLists(setLists, setListsLoading) {
+  setListsLoading(true);
+
   fetch(`/api/lists`, {
     method: 'GET'
   })
@@ -58,11 +60,14 @@ function refreshLists(setLists) {
 
     })
     .catch(() => alert("Website inaccessible. Failed to get lists."))
+    .finally(() => setListsLoading(false));
 }
 
 export default function Body({signs, signSlug}) {
   const [sign, setSign] = useState();
   const [lists, setLists] = useState([]);
+  const [listsLoading, setListsLoading] = useState(false);
+  const [loggingIn, setLoggingIn] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -97,6 +102,7 @@ export default function Body({signs, signSlug}) {
 
   const attemptToLogUserIn = (event) => {
     event.preventDefault();
+    setLoggingIn(true);
 
     const username = event.target.querySelector('input').value;
 
@@ -118,6 +124,7 @@ export default function Body({signs, signSlug}) {
         }
       })
       .catch(() => alert("Website inaccessible. Login failed."))
+      .finally(() => setLoggingIn(false));
   }
 
   const logout = (event = null) => {
@@ -161,7 +168,7 @@ export default function Body({signs, signSlug}) {
 
   useEffect(() => {
     if (user) {
-      refreshLists(setLists);
+      refreshLists(setLists, setListsLoading);
     }
   }, [user]);
 
@@ -188,7 +195,7 @@ export default function Body({signs, signSlug}) {
       .then(r => r.json())
       .then(r => {
         if (!r.success) {
-          refreshLists(setLists)
+          refreshLists(setLists, setListsLoading)
           alert('Failed to update list.');
         }
       })
@@ -237,80 +244,91 @@ export default function Body({signs, signSlug}) {
                 placeholder="Search signs..."
               />
               <button
-                className="px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-l-0"
+                className="px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 border rounded-r-lg"
               >
                 <CiSearch/>
               </button>
-              <div className="relative" ref={profileMenuRef}>
-                <button
-                  type="button"
-                  className="h-full px-4 py-2 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-500 border border-l-0"
-                  onMouseEnter={() => setProfileMenuOpen(true)}
-                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                  aria-label="Profile"
-                >
-                  <CiUser/>
-                </button>
-                {profileMenuOpen && (
-                  user ? (
-                    <div className="absolute top-full right-0 z-20 w-80 mt-2 p-4 bg-white dark:bg-gray-900 border rounded-lg shadow-lg">
-                      <div className="mb-4 font-semibold text-gray-700 dark:text-white">
-                        My Lists
-                      </div>
-                      {lists.length ? (
-                        lists.map((list) => (
-                          <Link
-                            key={list.id}
-                            href={`/lists/${encodeURIComponent(list.id)}`}
-                            className="block mb-2 p-2 bg-gray-50 dark:bg-gray-900 border rounded text-blue-600 hover:underline dark:text-custom-blue-text"
-                            onClick={() => setProfileMenuOpen(false)}
-                          >
-                            {list.name}
-                          </Link>
-                        ))
-                      ) : (
-                        <div className="mb-2 text-gray-600 dark:text-gray-300">
-                          No lists yet
-                        </div>
-                      )}
-
-                      <hr className="mt-5"/>
-
-                      <div className="mt-4">
-                        <form onSubmit={logout} className="flex justify-end">
-                          <button
-                            className="px-4 py-2 bg-red-400 text-white rounded-lg hover:bg-red-600 flex items-center gap-2">
-                            Logout
-                            <CiLogout/>
-                          </button>
-                        </form>
-                      </div>
+            </div>
+            <div className="relative" ref={profileMenuRef}>
+              <button
+                type="button"
+                className="h-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 border"
+                onMouseEnter={() => setProfileMenuOpen(true)}
+                onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                aria-label="Profile"
+              >
+                <CiUser/>
+              </button>
+              {profileMenuOpen && (
+                user ? (
+                  <div
+                    className="absolute top-full right-0 z-20 w-80 mt-2 p-4 bg-white dark:bg-gray-900 border rounded-lg shadow-lg">
+                    <div className="mb-4 font-semibold text-gray-700 dark:text-white">
+                      My Lists
                     </div>
-                  ) : (
-                    <div className="absolute top-full right-0 z-20 w-64 mt-2 p-4 bg-white dark:bg-gray-900 border rounded-lg shadow-lg">
-                      <form onSubmit={attemptToLogUserIn} className="space-y-2">
-                        <div>
-                          <label htmlFor="profile-username" className="block text-sm font-medium">
-                            Login:
-                          </label>
-                          <input
-                            type="text"
-                            id="profile-username"
-                            placeholder="Username"
-                            required
-                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800"
-                          />
-                        </div>
+                    {listsLoading ? (
+                      <div className="mb-2 text-gray-600 dark:text-gray-300" role="status">
+                        Loading lists...
+                      </div>
+                    ) : lists.length ? (
+                      lists.map((list) => (
+                        <Link
+                          key={list.id}
+                          href={`/lists/${encodeURIComponent(list.id)}`}
+                          className="block mb-2 p-2 bg-gray-50 dark:bg-gray-900 border rounded text-blue-600 hover:underline dark:text-custom-blue-text"
+                          onClick={() => setProfileMenuOpen(false)}
+                        >
+                          {list.name}
+                        </Link>
+                      ))
+                    ) : (
+                      <div className="mb-2 text-gray-600 dark:text-gray-300">
+                        No lists yet
+                      </div>
+                    )}
+
+                    <hr className="mt-5"/>
+
+                    <div className="mt-4">
+                      <form onSubmit={logout} className="flex justify-end">
+                        <button
+                          className="px-4 py-2 bg-red-400 text-white rounded-lg hover:bg-red-600 flex items-center gap-2">
+                          Logout
+                          <CiLogout/>
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className="absolute top-full right-0 z-20 w-64 mt-2 p-4 bg-white dark:bg-gray-900 border rounded-lg shadow-lg">
+                    <form onSubmit={attemptToLogUserIn} className="space-y-2">
+                      <div>
+                        <label htmlFor="profile-username" className="block text-sm font-medium">
+                          Login:
+                        </label>
+                        <input
+                          type="text"
+                          id="profile-username"
+                          placeholder="Username"
+                          required
+                          disabled={loggingIn}
+                          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800"
+                        />
+                      </div>
+                      {loggingIn ? (
+                        <div className="text-center" role="status">Logging in...</div>
+                      ) : (
                         <input
                           type="submit"
                           value="Login"
                           className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 cursor-pointer"
                         />
-                      </form>
-                    </div>
-                  )
-                )}
-              </div>
+                      )}
+                    </form>
+                  </div>
+                )
+              )}
             </div>
 
           </div>
@@ -344,37 +362,43 @@ export default function Body({signs, signSlug}) {
                       <div className="mb-4 text-gray-700 dark:text-white">
                         Add <strong>{sign?.name}</strong> to one of your lists.
                       </div>
-                      {lists.map((list) => (
-                        <div key={list.id}
-                             className="flex justify-between mb-2 bg-gray-50 dark:bg-gray-900 border rounded items-stretch">
-
-                          <Link href={`/lists/${encodeURIComponent(list.id)}`}
-                                className="text-blue-600 hover:underline m-2 dark:text-custom-blue-text">
-                            {list.name}
-                          </Link>
-
-                          <div className="">
-                            {listContainsSign(list, sign) ? (
-                              <button
-                                onClick={() => toggleSignInList(list.id, sign.id, false)}
-                                className="text-white hover:bg-red-700 bg-red-500 h-full px-4 rounded-r"
-                                title={`Remove "${sign.name}" from "${list.name}"`}
-                              >
-                                <FiMinus size={20}/>
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => toggleSignInList(list.id, sign.id, true)}
-                                className="text-white hover:bg-green-700 bg-green-500 h-full px-4 rounded-r"
-                                title={`Add "${sign.name}" to "${list.name}"`}
-                              >
-                                <IoAdd size={20}/>
-                              </button>
-                            )}
-                          </div>
-
+                      {listsLoading ? (
+                        <div className="mb-2 text-gray-600 dark:text-gray-300" role="status">
+                          Loading lists...
                         </div>
-                      ))}
+                      ) : (
+                        lists.map((list) => (
+                          <div key={list.id}
+                               className="flex justify-between mb-2 bg-gray-50 dark:bg-gray-900 border rounded items-stretch">
+
+                            <Link href={`/lists/${encodeURIComponent(list.id)}`}
+                                  className="text-blue-600 hover:underline m-2 dark:text-custom-blue-text">
+                              {list.name}
+                            </Link>
+
+                            <div className="">
+                              {listContainsSign(list, sign) ? (
+                                <button
+                                  onClick={() => toggleSignInList(list.id, sign.id, false)}
+                                  className="text-white hover:bg-red-700 bg-red-500 h-full px-4 rounded-r"
+                                  title={`Remove "${sign.name}" from "${list.name}"`}
+                                >
+                                  <FiMinus size={20}/>
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => toggleSignInList(list.id, sign.id, true)}
+                                  className="text-white hover:bg-green-700 bg-green-500 h-full px-4 rounded-r"
+                                  title={`Add "${sign.name}" to "${list.name}"`}
+                                >
+                                  <IoAdd size={20}/>
+                                </button>
+                              )}
+                            </div>
+
+                          </div>
+                        ))
+                      )}
 
                       <div className="mt-4">
                         <form onSubmit={createNewList} className="flex">
@@ -408,7 +432,8 @@ export default function Body({signs, signSlug}) {
                     </div>
                   </>
                 ) : (
-                  <div className="absolute top-full right-0 w-64 mt-2 p-4 bg-white dark:bg-gray-900 border rounded-lg shadow-lg">
+                  <div
+                    className="absolute top-full right-0 w-64 mt-2 p-4 bg-white dark:bg-gray-900 border rounded-lg shadow-lg">
                     <form onSubmit={attemptToLogUserIn} className="space-y-2">
                       <div>
                         <label htmlFor="username" className="block text-sm font-medium">
@@ -419,14 +444,19 @@ export default function Body({signs, signSlug}) {
                           id="username"
                           placeholder="Username"
                           required
+                          disabled={loggingIn}
                           className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800"
                         />
                       </div>
-                      <input
-                        type="submit"
-                        value="Login"
-                        className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 cursor-pointer"
-                      />
+                      {loggingIn ? (
+                        <div className="text-center" role="status">Logging in...</div>
+                      ) : (
+                        <input
+                          type="submit"
+                          value="Login"
+                          className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 cursor-pointer"
+                        />
+                      )}
                     </form>
                   </div>
                 )
@@ -436,7 +466,8 @@ export default function Body({signs, signSlug}) {
 
             <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-900">
               <div className="text-xl font-bold dark:text-white">{sign.name}</div>
-              <a href={sign.url} className="text-blue-600 dark:text-custom-blue-text hover:underline break-words" target="_blank">
+              <a href={sign.url} className="text-blue-600 dark:text-custom-blue-text hover:underline break-words"
+                 target="_blank">
                 {sign.url}
               </a>
             </div>
