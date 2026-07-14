@@ -70,19 +70,20 @@ export default function Body({signs, signSlug}) {
   const [loggingIn, setLoggingIn] = useState(false);
   const router = useRouter();
 
+  // On page load set the sign to the one in the url slug. Or a random sign
   useEffect(() => {
     if (signs) {
       if (signSlug) {
         const foundSign = signs.find((sign) => sign.slug === signSlug);
-        setSign(foundSign || "Sign not found");
-        return;
-      }
-      if (!sign) {
+        if (!sign || sign.id !== foundSign.id) {
+          setSign(foundSign || "Sign not found");
+        }
+      } else if (!sign) {
         const randomSign = signs[Math.floor(Math.random() * signs.length)];
         setSign(randomSign);
       }
     }
-  }, [sign, signs, signSlug]);
+  }, [signs, signSlug]);
 
   useEffect(() => {
     if (sign) {
