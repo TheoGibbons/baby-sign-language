@@ -248,8 +248,8 @@ export default function Body({signs, signSlug, synonyms}) {
                 user ? (
                   <div
                     className="absolute top-full right-0 z-20 w-80 mt-2 p-4 bg-white dark:bg-gray-900 border rounded-lg shadow-lg">
-                    <div className="mb-4 font-semibold text-gray-700 dark:text-white">
-                      My Lists
+                    <div className="mb-4 font-semibold text-gray-700 dark:text-white flex justify-between">
+                      Lists <small className="text-gray-400">{user.username}</small>
                     </div>
                     {listsLoading ? (
                       <div className="mb-2 text-gray-600 dark:text-gray-300" role="status">
