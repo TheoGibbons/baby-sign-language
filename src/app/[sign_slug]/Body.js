@@ -64,10 +64,12 @@ function refreshLists(setLists, setListsLoading) {
 }
 
 export default function Body({signs, signSlug}) {
-  const [sign, setSign] = useState();
+  const [sign, setSign] = useState(null);
+  const [signNotFound, setSignNotFound] = useState(false);
   const [lists, setLists] = useState([]);
   const [listsLoading, setListsLoading] = useState(false);
   const [loggingIn, setLoggingIn] = useState(false);
+  const lastSignSlug = useRef();
   const router = useRouter();
 
   // On page load set the sign to the one in the url slug. Or a random sign
@@ -75,15 +77,21 @@ export default function Body({signs, signSlug}) {
     if (signs) {
       if (signSlug) {
         const foundSign = signs.find((sign) => sign.slug === signSlug);
-        if (!sign || sign.id !== foundSign.id) {
-          setSign(foundSign || "Sign not found");
+        if (lastSignSlug.current !== signSlug) {
+          lastSignSlug.current = signSlug;
+          setSign(foundSign || null);
+          setSignNotFound(!foundSign);
         }
-      } else if (!sign) {
-        const randomSign = signs[Math.floor(Math.random() * signs.length)];
-        setSign(randomSign);
+      } else {
+        lastSignSlug.current = undefined;
+        if (!sign) {
+          setSignNotFound(false);
+          const randomSign = signs[Math.floor(Math.random() * signs.length)];
+          setSign(randomSign);
+        }
       }
     }
-  }, [signs, signSlug]);
+  }, [sign, signs, signSlug]);
 
   useEffect(() => {
     if (sign) {
@@ -342,8 +350,8 @@ export default function Body({signs, signSlug}) {
         </>
       )}
 
-      {typeof sign === 'string' ? (
-        <div className="mt-6 text-lg font-semibold">{sign}</div>
+      {signNotFound ? (
+        <div className="mt-6 text-lg font-semibold">Sign not found</div>
       ) : (
         sign && (
           <div className="mt-6 relative">
