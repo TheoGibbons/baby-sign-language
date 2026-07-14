@@ -45,3 +45,5 @@ next-env.d.ts
 
 /src/cache/*
 !/src/cache/.gitkeep
+
+/src/cache-backup.zip

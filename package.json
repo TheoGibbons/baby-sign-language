@@ -10,7 +10,8 @@
     "build": "prisma generate && next build && npm run populate-db",
     "start": "next start",
     "lint": "next lint",
-    "populate-db": "node src/scripts/populate-db.js"
+    "populate-db": "node src/scripts/populate-db.js",
+    "export-sign-names": "node src/scripts/export-sign-names.js"
   },
   "dependencies": {
     "@prisma/client": "^5.21.1",

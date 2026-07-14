@@ -12,33 +12,9 @@ import {IoAdd} from "react-icons/io5";
 import {YouTubeEmbed} from "@/components/YouTubeEmbed";
 import {useRouter} from "next/navigation";
 import SignView from "@/app/components/SignView";
-
-const easyCompare = (str1, str2) => str1.toLowerCase().trim() === str2.toLowerCase().trim();
+import {searchForSign} from "@/utils/searchForSign";
 
 const listContainsSign = (list, sign) => !!list.signs.find(s => s === sign.id);
-
-const searchForSign = (searchString, signs) => {
-
-  // Does the search string exactly match a sign name
-  const signsWhereNameExactlyMatches = signs.filter(sign => easyCompare(sign.name, searchString));
-  if (signsWhereNameExactlyMatches.length === 1) {
-    return signsWhereNameExactlyMatches[0];
-  }
-
-  // Does the search string exactly match a sign slug
-  const signsWhereSlugExactlyMatches = signs.filter(sign => easyCompare(sign.slug, searchString));
-  if (signsWhereSlugExactlyMatches.length === 1) {
-    return signsWhereSlugExactlyMatches[0];
-  }
-
-  // Get all sign names that start with the search string
-  const signsWhereNameStartsSearchString = signs.filter(sign => sign.name.toLowerCase().trim().startsWith(searchString.toLowerCase().trim()));
-  if (signsWhereNameStartsSearchString.length === 1) {
-    return signsWhereNameStartsSearchString[0];
-  }
-
-  return null;
-}
 
 function refreshLists(setLists, setListsLoading) {
   setListsLoading(true);
@@ -63,7 +39,7 @@ function refreshLists(setLists, setListsLoading) {
     .finally(() => setListsLoading(false));
 }
 
-export default function Body({signs, signSlug}) {
+export default function Body({signs, signSlug, synonyms}) {
   const [sign, setSign] = useState(null);
   const [signNotFound, setSignNotFound] = useState(false);
   const [lists, setLists] = useState([]);
@@ -101,7 +77,7 @@ export default function Body({signs, signSlug}) {
   }, [sign, router]);
 
   const searchOnChange = (event) => {
-    const mySign = searchForSign(event.target.value, signs);
+    const mySign = searchForSign(event.target.value, signs, synonyms);
     if (mySign && mySign.id !== sign?.id) {
       setSign(mySign);
     }
