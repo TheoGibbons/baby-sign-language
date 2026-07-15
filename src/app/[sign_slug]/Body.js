@@ -125,11 +125,8 @@ export default function Body({signs, signSlug, synonyms}) {
       });
   }
 
-  const createNewList = (event) => {
-    event.preventDefault();
-
-    const listName = event.target.querySelector('input').value;
-
+  const createList = (listName, onSuccess) => {
+    setListsLoading(true);
     fetch('/api/lists/new', {
       method: 'POST',
       body: JSON.stringify({listName}),
@@ -140,15 +137,33 @@ export default function Body({signs, signSlug, synonyms}) {
       .then(r => r.json())
       .then(r => {
 
+        setListsLoading(false);
+
         if (r?.success) {
           setLists((prevItems) => [...prevItems, r.list]);
-          event.target.reset()
+          onSuccess?.();
         } else {
           alert('List creation failed');
         }
 
       })
-      .catch(() => alert("Website inaccessible. Failed to create list."))
+      .catch(() => {
+        setListsLoading(false);
+        alert("Website inaccessible. Failed to create list.")
+      })
+  }
+
+  const createNewList = (event) => {
+    event.preventDefault();
+    createList(event.target.querySelector('input').value, () => event.target.reset());
+  }
+
+  const promptToCreateList = () => {
+    const listName = prompt('Enter a name for the new list');
+
+    if (listName) {
+      createList(listName);
+    }
   }
 
   useEffect(() => {
@@ -274,8 +289,16 @@ export default function Body({signs, signSlug, synonyms}) {
 
                     <hr className="mt-5"/>
 
-                    <div className="mt-4">
-                      <form onSubmit={logout} className="flex justify-end">
+                    <div className="mt-4 flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={promptToCreateList}
+                        className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2"
+                      >
+                        Create New List
+                        <AiOutlineSave/>
+                      </button>
+                      <form onSubmit={logout}>
                         <button
                           className="px-4 py-2 bg-red-400 text-white rounded-lg hover:bg-red-600 flex items-center gap-2">
                           Logout
