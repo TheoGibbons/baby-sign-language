@@ -2,6 +2,7 @@
 
 import SignGrid from "@/app/components/SignGrid";
 import LogoLink from "@/app/components/LogoLink";
+import ProfileMenu from "@/app/components/ProfileMenu";
 
 function Body({signs}) {
   return (
@@ -10,9 +11,12 @@ function Body({signs}) {
 
         <LogoLink/>
 
-        <h1 className="text-2xl">
-          All Signs
-        </h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl">
+            All Signs
+          </h1>
+          <ProfileMenu/>
+        </div>
 
       </div>
 

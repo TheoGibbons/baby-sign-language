@@ -5,6 +5,7 @@ import LogoLink from "@/app/components/LogoLink";
 import {BiEdit, BiSolidTrash} from "react-icons/bi";
 import {useRouter} from "next/navigation";
 import SignGrid from "@/app/components/SignGrid";
+import ProfileMenu from "@/app/components/ProfileMenu";
 
 function Body({listId, signs}) {
 
@@ -86,7 +87,10 @@ function Body({listId, signs}) {
         <div>
           <div className="flex justify-between items-center mb-4">
 
-            <LogoLink/>
+            <div className="flex items-center gap-2">
+              <LogoLink/>
+              <a href="/signs" className="text-blue-600 dark:text-custom-blue-text hover:underline break-words">All signs</a>
+            </div>
 
             <h1 className="text-2xl">
               List: <strong>{list.name}</strong>
@@ -104,6 +108,7 @@ function Body({listId, signs}) {
               >
                 <BiSolidTrash/>
               </button>
+              <ProfileMenu/>
             </div>
 
           </div>

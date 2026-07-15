@@ -5,7 +5,7 @@ import Image from 'next/image'
 import {AuthProviderContext} from "@/app/components/AuthProvider";
 import Link from "next/link";
 import LogoLink from "@/app/components/LogoLink";
-import {CiLogout, CiSearch, CiUser} from "react-icons/ci";
+import {CiLogout, CiSearch} from "react-icons/ci";
 import {AiOutlineSave} from "react-icons/ai";
 import {FiMinus} from "react-icons/fi";
 import {IoAdd} from "react-icons/io5";
@@ -13,6 +13,7 @@ import {YouTubeEmbed} from "@/components/YouTubeEmbed";
 import {useRouter} from "next/navigation";
 import SignView from "@/app/components/SignView";
 import {searchForSign} from "@/utils/searchForSign";
+import ProfileMenu from "@/app/components/ProfileMenu";
 
 const listContainsSign = (list, sign) => !!list.signs.find(s => s === sign.id);
 
@@ -121,7 +122,6 @@ export default function Body({signs, signSlug, synonyms}) {
         localStorage.removeItem('user');
         setUser(null);
         setMenuOpen(false);
-        setProfileMenuOpen(false);
       });
   }
 
@@ -204,16 +204,11 @@ export default function Body({signs, signSlug, synonyms}) {
   }
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const menuRef = useRef(null);
-  const profileMenuRef = useRef(null);
 
   const handleClickOutside = (event) => {
     if (menuRef.current && !menuRef.current.contains(event.target)) {
       setMenuOpen(false);
-    }
-    if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
-      setProfileMenuOpen(false);
     }
   };
 
@@ -249,95 +244,9 @@ export default function Body({signs, signSlug, synonyms}) {
                 <CiSearch/>
               </button>
             </div>
-            <div className="relative" ref={profileMenuRef}>
-              <button
-                type="button"
-                className="h-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 border"
-                onMouseEnter={() => setProfileMenuOpen(true)}
-                onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                aria-label="Profile"
-              >
-                <CiUser/>
-              </button>
-              {profileMenuOpen && (
-                user ? (
-                  <div
-                    className="absolute top-full right-0 z-20 w-80 mt-2 p-4 bg-white dark:bg-gray-900 border rounded-lg shadow-lg">
-                    <div className="mb-4 font-semibold text-gray-700 dark:text-white flex justify-between">
-                      Lists <small className="text-gray-400">{user.username}</small>
-                    </div>
-                    {listsLoading ? (
-                      <div className="mb-2 text-gray-600 dark:text-gray-300" role="status">
-                        Loading lists...
-                      </div>
-                    ) : lists.length ? (
-                      lists.map((list) => (
-                        <Link
-                          key={list.id}
-                          href={`/lists/${encodeURIComponent(list.id)}`}
-                          className="block mb-2 p-2 bg-gray-50 dark:bg-gray-900 border rounded text-blue-600 hover:underline dark:text-custom-blue-text"
-                          onClick={() => setProfileMenuOpen(false)}
-                        >
-                          {list.name}
-                        </Link>
-                      ))
-                    ) : (
-                      <div className="mb-2 text-gray-600 dark:text-gray-300">
-                        No lists yet
-                      </div>
-                    )}
-
-                    <hr className="mt-5"/>
-
-                    <div className="mt-4 flex justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={promptToCreateList}
-                        className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2"
-                      >
-                        Create New List
-                        <AiOutlineSave/>
-                      </button>
-                      <form onSubmit={logout}>
-                        <button
-                          className="px-4 py-2 bg-red-400 text-white rounded-lg hover:bg-red-600 flex items-center gap-2">
-                          Logout
-                          <CiLogout/>
-                        </button>
-                      </form>
-                    </div>
-                  </div>
-                ) : (
-                  <div
-                    className="absolute top-full right-0 z-20 w-64 mt-2 p-4 bg-white dark:bg-gray-900 border rounded-lg shadow-lg">
-                    <form onSubmit={attemptToLogUserIn} className="space-y-2">
-                      <div>
-                        <label htmlFor="profile-username" className="block text-sm font-medium">
-                          Login:
-                        </label>
-                        <input
-                          type="text"
-                          id="profile-username"
-                          placeholder="Username"
-                          required
-                          disabled={loggingIn}
-                          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800"
-                        />
-                      </div>
-                      {loggingIn ? (
-                        <div className="text-center" role="status">Logging in...</div>
-                      ) : (
-                        <input
-                          type="submit"
-                          value="Login"
-                          className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 cursor-pointer"
-                        />
-                      )}
-                    </form>
-                  </div>
-                )
-              )}
-            </div>
+            <ProfileMenu
+              onListCreated={(list) => setLists((previousLists) => [...previousLists, list])}
+            />
 
           </div>
 
