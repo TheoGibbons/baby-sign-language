@@ -1,29 +1,78 @@
 # Baby Sign Language
 
-The Next.js application is deployed on Vercel. Its PostgreSQL database runs as
-a separate Docker Compose project on EC2. Traefik is not involved: PostgreSQL is
-TCP database traffic, not HTTP, and is published directly on a dedicated port.
+The Next.js application is deployed on Vercel. Its PostgreSQL database runs from
+this repository's Docker Compose project on EC2. Traefik is not involved in
+production: PostgreSQL is TCP database traffic, not HTTP, and is published
+directly on a dedicated port.
+
+The same Compose project also builds and runs the application itself, so the
+whole thing can be brought up locally with one command. That path is for local
+use; production deployment of the app is unchanged and still belongs to Vercel.
 
 ## Local development
 
-Start the local TLS-enabled database:
+Start PostgreSQL and the application together:
 
 ```bash
 ./scripts/up-local.sh
 ```
 
+Open <http://localhost:3082>.
+
 The script creates `.env.database` from `.env.database.example`, starts
-PostgreSQL on `127.0.0.1:5436`, and applies the tracked Prisma migrations. The
-local checkout may remain at `~/projects/baby-sign-language`. Copy `.env.example`
-to `.env.local` if the application is not already configured:
+PostgreSQL on `127.0.0.1:5436`, applies the tracked Prisma migrations, then
+builds and starts the app. The local checkout may remain at
+`~/projects/baby-sign-language`.
+
+To work on the application with hot reload instead, run only the database in
+Docker and Next.js on the host:
 
 ```bash
+./scripts/up-local.sh --database-only
 cp .env.example .env.local
 npm install
 npm run dev
 ```
 
 Open <http://localhost:3000>.
+
+Rebuild the container after changing application code; the image is built once
+and `next start` serves the compiled output:
+
+```bash
+docker compose --env-file .env.database up -d --build app
+```
+
+A bare `docker compose up -d --build` also works and publishes the same port,
+but it skips the migration container, which sits behind the `tools` profile. Use
+the script at least once against a new database volume so the schema exists.
+
+## Through the shared Traefik proxy
+
+The application is also wired up for the shared proxy in
+`~/projects/hobby-traefik`, following its integration playbook. Start that stack
+first, then:
+
+```bash
+./scripts/up-local-traefik.sh
+```
+
+Open <http://signs.localhost:8085>.
+
+| File | Purpose |
+|---|---|
+| `docker-compose.yml` | Proxy-agnostic PostgreSQL, migrations and app |
+| `docker-compose.override.yml` | Standalone loopback port, loaded automatically |
+| `docker-compose.traefik.yml` | Shared `traefik-public` network and routing labels |
+| `docker-compose.prod.yml` | HTTPS overlay, unused while the app lives on Vercel |
+
+The two modes are mutually exclusive. Plain `docker compose` commands pick up
+the standalone override and publish `APP_PORT`; the Traefik script passes its
+`-f` files explicitly, which suppresses that override so only Traefik fronts the
+app. PostgreSQL keeps its own host port in both modes because it is not HTTP.
+
+Only the app joins `traefik-public`. PostgreSQL stays on the private network and
+never gets `traefik.enable=true`.
 
 To create a schema migration during development:
 
@@ -34,21 +83,35 @@ npx prisma migrate dev
 Commit the generated directory under `prisma/migrations/`. Production runs
 `prisma migrate deploy`; it never uses the development migration command.
 
-## Database layout
+## Compose layout
 
-The Compose stack contains only:
+The stack contains:
 
 - PostgreSQL 16 with a persistent data volume.
 - A persistent, automatically generated TLS certificate.
 - `pg_hba.conf` rules that reject non-TLS TCP connections and allow only the
   configured client CIDRs plus the private Docker network.
 - An on-demand Prisma migration image.
+- The application image built from the repository root [Dockerfile](Dockerfile).
 
 The server uses SCRAM password authentication and TLS 1.2 or newer. Local and
 production instances use the same [docker-compose.yml](docker-compose.yml), with
 different `.env.database` files.
 
+The Compose project is named `baby-sign-language-database`, which now covers
+more than the database. The name is kept because renaming it would orphan the
+live `baby-sign-language-database_database-data` volume on EC2 and bring
+PostgreSQL up empty.
+
+The application image runs `next build` without a database and `next start` as
+an unprivileged user. It deliberately does not run `npm run build`, whose script
+also invokes the scraper that repopulates PostgreSQL.
+
 ## Deploy the database on EC2
+
+Production runs only PostgreSQL here; the application still comes from Vercel.
+`scripts/deploy.sh` names the postgres service explicitly, so the app service is
+built and started only on request.
 
 This is independent of `hobby-traefik`; the proxy does not need a configuration
 change or a shared Docker network.

@@ -13,6 +13,10 @@
 /.next/
 /out/
 
+# generated into public/ by next-pwa on every production build
+/public/sw.js
+/public/workbox-*.js
+
 # production
 /build
 

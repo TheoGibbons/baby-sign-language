@@ -1,6 +1,13 @@
-# PostgreSQL-only infrastructure for Baby Sign Language. The Next.js app remains
-# hosted by Vercel; Traefik is intentionally not involved because PostgreSQL is
-# not HTTP traffic.
+# Proxy-agnostic services for Baby Sign Language.
+#
+# Production still runs the Next.js app on Vercel and only PostgreSQL on EC2, so
+# `scripts/deploy.sh` names the postgres service explicitly and never starts the
+# app. The app service exists so the whole thing can be run locally, and it is
+# ready for the shared proxy through docker-compose.traefik.yml.
+#
+# The project name keeps its original `-database` suffix on purpose: renaming it
+# would orphan the live `baby-sign-language-database_database-data` volume on
+# EC2 and bring PostgreSQL up empty.
 
 name: baby-sign-language-database
 
@@ -30,6 +37,23 @@ services:
       start_period: 10s
     stop_grace_period: 60s
     shm_size: 256mb
+
+  # No host port here; docker-compose.override.yml publishes one for standalone
+  # use and docker-compose.traefik.yml routes to it through the shared proxy.
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_CACHE_VERSION: ${NEXT_PUBLIC_CACHE_VERSION:-1}
+    restart: unless-stopped
+    expose:
+      - '3000'
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-baby_signs}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-baby_signs}?sslmode=require&connection_limit=5&pool_timeout=10&connect_timeout=10
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   # Invoked explicitly by scripts/up-local.sh and scripts/deploy.sh. The profile
   # prevents an ordinary `docker compose up` from leaving a migration container.

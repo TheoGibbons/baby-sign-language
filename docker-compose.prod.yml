@@ -1,0 +1,13 @@
+# HTTPS policy for running the app itself on EC2 behind the shared proxy. Use
+# with both docker-compose.yml and docker-compose.traefik.yml.
+#
+# Nothing uses this today: production serves the app from Vercel and EC2 runs
+# only PostgreSQL. It exists so moving the app off Vercel is a deployment
+# change rather than a redesign.
+
+services:
+  app:
+    labels:
+      traefik.http.routers.baby-sign-language.entrypoints: websecure
+      traefik.http.routers.baby-sign-language.tls: 'true'
+      traefik.http.routers.baby-sign-language.tls.certresolver: letsencrypt
