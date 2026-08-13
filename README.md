@@ -65,6 +65,17 @@ nano .env.database
 ./scripts/deploy.sh
 ```
 
+Only do this if the scripts need to be made executable:
+```bash
+cd ./scripts
+chmod +x *.sh
+cd ..
+git add scripts/backup.sh scripts/deploy.sh scripts/up-local.sh
+git commit -m "Make shell scripts executable"
+git push
+./scripts/deploy.sh
+```
+
 Put the generated password in `POSTGRES_PASSWORD`. Set `POSTGRES_TLS_HOST` to the
 database DNS name and `POSTGRES_ALLOWED_CIDRS` to Vercel's static outbound IPs,
 each suffixed with `/32`.
