@@ -1,8 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "@/lib/prisma";
 import { cookies } from "next/headers";
-
-// Initialize Prisma client
-const prisma = new PrismaClient();
 
 // Common validation function
 const validation = async (userId, listId, signId) => {

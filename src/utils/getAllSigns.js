@@ -1,8 +1,6 @@
-import {PrismaClient} from "@prisma/client";
+import prisma from "@/lib/prisma";
 
 export default async function getAllSigns() {
-
-  const prisma = new PrismaClient();
 
   try {
 
@@ -30,9 +28,6 @@ export default async function getAllSigns() {
 
   } catch (error) {
     return {signs: null, error: error};
-  } finally {
-    // Ensure Prisma disconnects properly after fetching data
-    await prisma.$disconnect();
   }
 
 }

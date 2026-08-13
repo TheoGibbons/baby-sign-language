@@ -1,8 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "@/lib/prisma";
 
 export async function POST(request) {
-  const prisma = new PrismaClient();
-
   try {
     // Get post data
     const { username } = await request.json();
@@ -62,7 +60,5 @@ export async function POST(request) {
       }),
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

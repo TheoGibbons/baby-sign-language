@@ -1,9 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "@/lib/prisma";
 import { cookies } from "next/headers";
 import getListObject from "@/utils/getListObject";
-
-// Initialize Prisma client
-const prisma = new PrismaClient();
 
 // Validation function to check if the user exists
 const validation = async (userId) => {

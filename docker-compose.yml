@@ -1,0 +1,50 @@
+# PostgreSQL-only infrastructure for Baby Sign Language. The Next.js app remains
+# hosted by Vercel; Traefik is intentionally not involved because PostgreSQL is
+# not HTTP traffic.
+
+name: baby-sign-language-database
+
+services:
+  postgres:
+    build:
+      context: .
+      dockerfile: docker/postgres/Dockerfile
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-baby_signs}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.database}
+      POSTGRES_DB: ${POSTGRES_DB:-baby_signs}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+      POSTGRES_TLS_HOST: ${POSTGRES_TLS_HOST:-localhost}
+      POSTGRES_ALLOWED_CIDRS: ${POSTGRES_ALLOWED_CIDRS:-127.0.0.1/32}
+    ports:
+      - '${POSTGRES_BIND:-127.0.0.1}:${POSTGRES_PORT:-5436}:5432'
+    volumes:
+      - database-data:/var/lib/postgresql/data
+      - database-tls:/var/lib/postgresql/tls
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-baby_signs} -d ${POSTGRES_DB:-baby_signs}']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    stop_grace_period: 60s
+    shm_size: 256mb
+
+  # Invoked explicitly by scripts/up-local.sh and scripts/deploy.sh. The profile
+  # prevents an ordinary `docker compose up` from leaving a migration container.
+  migrate:
+    profiles: [tools]
+    build:
+      context: .
+      dockerfile: docker/migrate/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-baby_signs}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-baby_signs}?sslmode=require&connection_limit=1
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
+
+volumes:
+  database-data:
+  database-tls:

@@ -1,9 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "@/lib/prisma";
 import { cookies } from "next/headers";
 import getListObject from "@/utils/getListObject";
-
-// Initialize Prisma client
-const prisma = new PrismaClient();
 
 // Validation function to check if user exists and list name is unique
 const validateCreateListRequest = async (userId, listName) => {
@@ -85,8 +82,5 @@ export async function POST(request) {
       }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
-  } finally {
-    // Disconnect Prisma client after operation
-    await prisma.$disconnect();
   }
 }
