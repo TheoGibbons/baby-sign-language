@@ -13,7 +13,7 @@ services:
     labels:
       traefik.enable: 'true'
       traefik.docker.network: traefik-public
-      traefik.http.routers.baby-sign-language.rule: 'Host(`${APP_HOST:?Set APP_HOST in .env.database}`)'
+      traefik.http.routers.baby-sign-language.rule: 'Host(`${APP_HOST:?Set APP_HOST in .env}`)'
       traefik.http.routers.baby-sign-language.entrypoints: web
       traefik.http.routers.baby-sign-language.service: baby-sign-language
       traefik.http.routers.baby-sign-language.middlewares: baby-sign-language-compress@docker,baby-sign-language-security@docker

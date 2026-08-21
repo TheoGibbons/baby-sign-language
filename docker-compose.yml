@@ -19,7 +19,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-baby_signs}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.database}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: ${POSTGRES_DB:-baby_signs}
       POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
       POSTGRES_TLS_HOST: ${POSTGRES_TLS_HOST:-localhost}

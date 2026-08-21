@@ -13,11 +13,19 @@ if [[ "${1:-}" == "--database-only" ]]; then
   database_only=true
 fi
 
-if [[ ! -f .env.database ]]; then
-  cp .env.database.example .env.database
+# This project used to read .env.database. An existing checkout still has that
+# file, and silently starting with different credentials is worse than stopping.
+if [[ ! -f .env && -f .env.database ]]; then
+  echo "This project now reads .env, not .env.database." >&2
+  echo "Rename it once, then re-run:  mv .env.database .env" >&2
+  exit 1
 fi
 
-compose=(docker compose --env-file .env.database)
+if [[ ! -f .env ]]; then
+  cp .env.example .env
+fi
+
+compose=(docker compose --env-file .env)
 "${compose[@]}" config --quiet
 "${compose[@]}" up -d --build --wait postgres
 "${compose[@]}" --profile tools run --rm --build migrate
@@ -30,7 +38,7 @@ fi
 
 set -a
 # shellcheck disable=SC1091
-source .env.database
+source .env
 set +a
 
 if [[ "$database_only" == false ]]; then

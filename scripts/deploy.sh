@@ -4,18 +4,26 @@ set -Eeuo pipefail
 repo_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_dir"
 
-if [[ ! -f .env.database ]]; then
-  echo "Missing $repo_dir/.env.database; copy .env.database.production.example and configure it." >&2
+# This project used to read .env.database. An existing checkout still has that
+# file, and silently starting with different credentials is worse than stopping.
+if [[ ! -f .env && -f .env.database ]]; then
+  echo "This project now reads .env, not .env.database." >&2
+  echo "Rename it once, then re-run:  mv .env.database .env" >&2
+  exit 1
+fi
+
+if [[ ! -f .env ]]; then
+  echo "Missing $repo_dir/.env; copy .env.production.example and configure it." >&2
   exit 1
 fi
 
 set -a
 # shellcheck disable=SC1091
-source .env.database
+source .env
 set +a
 
 if [[ -z "${POSTGRES_PASSWORD:-}" || "$POSTGRES_PASSWORD" == "CHANGE_ME" || "$POSTGRES_PASSWORD" == "baby-signs-local-only" ]]; then
-  echo "Set a strong, URL-safe POSTGRES_PASSWORD in .env.database." >&2
+  echo "Set a strong, URL-safe POSTGRES_PASSWORD in .env." >&2
   exit 1
 fi
 
@@ -36,7 +44,7 @@ fi
 
 git pull --ff-only
 
-compose=(docker compose --env-file .env.database)
+compose=(docker compose --env-file .env)
 "${compose[@]}" config --quiet
 "${compose[@]}" up -d --build --wait postgres
 

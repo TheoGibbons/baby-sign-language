@@ -8,8 +8,16 @@ set -Eeuo pipefail
 repo_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_dir"
 
-if [[ ! -f .env.database ]]; then
-  cp .env.database.example .env.database
+# This project used to read .env.database. An existing checkout still has that
+# file, and silently starting with different credentials is worse than stopping.
+if [[ ! -f .env && -f .env.database ]]; then
+  echo "This project now reads .env, not .env.database." >&2
+  echo "Rename it once, then re-run:  mv .env.database .env" >&2
+  exit 1
+fi
+
+if [[ ! -f .env ]]; then
+  cp .env.example .env
 fi
 
 if ! docker network inspect traefik-public >/dev/null 2>&1; then
@@ -17,7 +25,7 @@ if ! docker network inspect traefik-public >/dev/null 2>&1; then
   exit 1
 fi
 
-compose=(docker compose --env-file .env.database -f docker-compose.yml -f docker-compose.traefik.yml)
+compose=(docker compose --env-file .env -f docker-compose.yml -f docker-compose.traefik.yml)
 "${compose[@]}" config --quiet
 "${compose[@]}" up -d --build --wait postgres
 "${compose[@]}" --profile tools run --rm --build migrate
@@ -26,6 +34,6 @@ compose=(docker compose --env-file .env.database -f docker-compose.yml -f docker
 
 set -a
 # shellcheck disable=SC1091
-source .env.database
+source .env
 set +a
 echo "App: http://${APP_HOST:-signs.localhost}:${TRAEFIK_HTTP_PORT:-8085}"
