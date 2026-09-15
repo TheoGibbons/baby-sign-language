@@ -46,6 +46,12 @@ git pull --ff-only
 
 compose=(docker compose --env-file .env)
 "${compose[@]}" config --quiet
+
+# Without this every build attaches a fresh provenance attestation, which gives
+# an unchanged image a new ID, and the server's Compose (2.40) recreates any
+# container whose image ID changed, restarting PostgreSQL on every deploy. These
+# images never leave the host, so nothing reads it.
+export BUILDX_NO_DEFAULT_ATTESTATIONS=1
 "${compose[@]}" up -d --build --wait postgres
 
 # Capture a recoverable snapshot immediately before applying schema changes.
